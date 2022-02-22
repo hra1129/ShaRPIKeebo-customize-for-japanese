@@ -1,0 +1,14 @@
+1. RaspbianOS のセットアップ
+	Raspberry Pi Imager 1.7.1以降を使って RaspbianOS 32bit Lite を microSDカードへインストールする。
+		[CHOOSE OS] → [Raspberry Pi OS(other)] → [Raspberry Pi OS Lite (32-bit)]
+		[歯車]
+			[V] Disable overscan
+			[ ]
+			[V] Enable SSH
+				(V) Use password autherication
+			[ ] Set username and password
+			[V] Configure wifi
+				[SSID] SSID入力
+				[ ] Hidden SSID
+			[V] Set locale settings
+				Time zone : Asia/Tokyo
