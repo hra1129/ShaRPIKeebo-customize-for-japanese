@@ -1,1 +1,1 @@
-# The default keymap for %(KEYBOARD)s
+# The default keymap for sharpikeebo
