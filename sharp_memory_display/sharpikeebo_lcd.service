@@ -1,10 +1,10 @@
 [Unit]
-Description=sharp_terminal
+Description=sharpikeebo_lcd
 Requires=basic.target pigpiod.service
 After=basic.target pigpiod.service
 
 [Service]
-ExecStart=/usr/local/bin/sharp_terminal --
+ExecStart=/usr/local/bin/sharpikeebo_lcd
 Type=simple
 Restart=on-failure
 

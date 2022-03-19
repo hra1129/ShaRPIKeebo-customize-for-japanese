@@ -14,15 +14,15 @@ Display terminal contents on SharpMemoryDisplay
 	behind the scenes The contents displayed on the terminal are directly displayed on SharpMemoryDisplay.
 
 2. Settings
-	(1) Copy sharp_terminal.service placed here to /etc/systemd/system/.
+	(1) Copy sharpikeebo_lcd.service placed here to /etc/systemd/system/.
 
-		$ sudo cp ./sharp_terminal.service /etc/systemd/system/
+		$ sudo cp ./sharpikeebo_lcd.service /etc/systemd/system/
 
-	(2) Give /etc/systemd/system/sharp_terminal.service the execute attribute
+	(2) Give /etc/systemd/system/sharpikeebo_lcd.service the execute attribute
 
-		$ sudo chmod 755 /etc/systemd/system/sharp_terminal.service
+		$ sudo chmod 755 /etc/systemd/system/sharpikeebo_lcd.service
 
-	(3) Enable and start the sharp_terminal service
+	(3) Enable and start the sharpikeebo_lcd service
 
-		$ sudo systemctl enable sharp_terminal
-		$ sudo systemctl start sharp_terminal
+		$ sudo systemctl enable sharpikeebo_lcd
+		$ sudo systemctl start sharpikeebo_lcd
