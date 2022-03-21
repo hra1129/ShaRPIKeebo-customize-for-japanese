@@ -14,6 +14,7 @@ SharpMemoryDisplay にターミナルの内容を表示する
 
 2. 設定方法
 	(1) ここに置いてある sharpikeebo_lcd.service を /etc/systemd/system/ にコピーする。
+		$ sudo cp ./sharpikeebo_lcd/sharpikeebo_lcd /usr/local/bin/
 		$ sudo cp ./sharpikeebo_lcd.service /etc/systemd/system/
 
 	(2) /etc/systemd/system/sharpikeebo_lcd.service に実行属性を与える

@@ -15,6 +15,7 @@ Display terminal contents on SharpMemoryDisplay
 2. Settings
 	(1) Copy sharpikeebo_lcd.service placed here to /etc/systemd/system/.
 
+		$ sudo cp ./sharpikeebo_lcd/sharpikeebo_lcd /usr/local/bin/
 		$ sudo cp ./sharpikeebo_lcd.service /etc/systemd/system/
 
 	(2) Give /etc/systemd/system/sharpikeebo_lcd.service the execute attribute
