@@ -26,6 +26,24 @@
 #define __SHARPIKEEBO_EFFECTS_H__
 
 // --------------------------------------------------------------------
+//	spk_initialize
+//	input)
+//		none
+//	output)
+//		none
+// --------------------------------------------------------------------
+void spk_initialize( void );
+
+// --------------------------------------------------------------------
+//	spk_terminate
+//	input)
+//		none
+//	output)
+//		none
+// --------------------------------------------------------------------
+void spk_terminate( void );
+
+// --------------------------------------------------------------------
 //	spk_splash
 //	input)
 //		none
@@ -33,5 +51,31 @@
 //		none
 // --------------------------------------------------------------------
 void spk_splash( void );
+
+// --------------------------------------------------------------------
+//	spk_led
+//	input)
+//		led ...... 0: Left-up, 1: Right-up, 2: Left-down, 3: Right-down
+//		led_on ... 0: off, 1: on
+//	output)
+//		none
+//	comment)
+//		LED position
+//			0 1
+//			2 3
+// --------------------------------------------------------------------
+typedef enum {
+	SPK_LED_LU = 0,
+	SPL_LED_RU = 1,
+	SPK_LED_LD = 2,
+	SPL_LED_RD = 3,
+} SPK_LED_T;
+
+typedef enum {
+	SPK_LED_OFF = 0,
+	SPK_LED_ON = 1,
+} SPK_LED_ON_T;
+
+void spk_led( SPK_LED_T led, SPK_LED_ON_T led_on );
 
 #endif

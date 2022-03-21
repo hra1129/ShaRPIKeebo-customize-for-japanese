@@ -27,27 +27,10 @@
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>
-#include <armbianio.h>
 
 #include "sharp_memory_display_driver.h"
 #include "sharpikeebo_effects.h"
 #include "fb_convert.h"
-
-#define LED0			15		//	LEFT-UP
-#define LED1			37		//	RIGHT-UP
-#define LED2			35		//	LEFT-DOWN
-#define LED3			33		//	RIGHT-DOWN
-#define LED_ON			1
-#define LED_OFF			0
-
-#define CS				16
-#define DISPON			18
-#define EXTCOMIN		22
-
-#define	INPUT			0
-#define	OUTPUT			1
-
-#define SPEED			4000000
 
 //static int hspi;
 static volatile int is_active = 0;
@@ -55,20 +38,6 @@ static volatile int is_active = 0;
 // --------------------------------------------------------------------
 static void shutdown_handler( int signal ) {
 	is_active = 0;
-}
-
-// --------------------------------------------------------------------
-static int init_sharp_memory_display( void ) {
-	AIOAddGPIO( LED0		, GPIO_OUT );
-	AIOAddGPIO( LED1		, GPIO_OUT );
-	AIOAddGPIO( LED2		, GPIO_OUT );
-	AIOAddGPIO( LED3		, GPIO_OUT );
-
-	AIOWriteGPIO( LED0		, LED_OFF );
-	AIOWriteGPIO( LED1		, LED_OFF );
-	AIOWriteGPIO( LED2		, LED_OFF );
-	AIOWriteGPIO( LED3		, LED_OFF );
-	return 1;
 }
 
 // --------------------------------------------------------------------
@@ -90,16 +59,11 @@ int main( int argc, char *argv[] ) {
 	sigaction( SIGINT, &sa, NULL );
 	is_active = 1;
 
-	if( !AIOInitBoard( "Raspberry Pi" ) ) {
-		fprintf( stderr, "[ERROR] Not supported.\n" );
-		return 1;
-	}
-
 	if( !fbc_initialize() ) {
 		return 2;
 	}
 
-	init_sharp_memory_display();
+	spk_initialize();
 
 	if( !smdd_initialize() ) {
 		return 3;
@@ -116,6 +80,9 @@ int main( int argc, char *argv[] ) {
 		else if( strcmp( argv[i], "-thresold" ) == 0 && (i + 1) < argc ) {
 			i++;
 			smdd_set_threshold( atoi( argv[i] ) );
+		}
+		else if( strcmp( argv[i], "-noblink" ) == 0 ) {
+			smdd_set_blink( 0 );
 		}
 		else {
 			fprintf( stderr, "[WARNING] Unknown command line option %s.\n", argv[i] );
@@ -147,6 +114,7 @@ int main( int argc, char *argv[] ) {
 		c = 1 - c;
 	}
 	smdd_terminate();
+	spk_terminate();
 	fbc_terminate();
 	return 0;
 }

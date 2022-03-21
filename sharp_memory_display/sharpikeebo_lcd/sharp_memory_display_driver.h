@@ -76,6 +76,15 @@ void smdd_convert_image( const uint32_t *p_src, unsigned char *p_dest, int c );
 void smdd_set_invert( int inv );
 
 // --------------------------------------------------------------------
+//	smdd_set_blink()
+//	input)
+//		blink ...... 0: not blink, 1: blink
+//	output)
+//		none
+// --------------------------------------------------------------------
+void smdd_set_blink( int blink );
+
+// --------------------------------------------------------------------
 //	smdd_set_threshold()
 //	input)
 //		thres .... threshold for binary conversion.

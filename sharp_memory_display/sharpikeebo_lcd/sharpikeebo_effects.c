@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------
 
 #include <unistd.h>
+#include <armbianio.h>
 #include "sharpikeebo_effects.h"
 #include "sharp_memory_display_driver.h"
 
@@ -30,8 +31,42 @@ static const unsigned char splash_logo[] = {
 #include "startup_logo.txt"
 };
 
+#define LED0			15		//	LEFT-UP
+#define LED1			37		//	RIGHT-UP
+#define LED2			35		//	LEFT-DOWN
+#define LED3			33		//	RIGHT-DOWN
+
+static const int led_pin[] = {
+	LED0, LED1, LED2, LED3
+};
+
+// --------------------------------------------------------------------
+void spk_initialize( void ) {
+	AIOInitBoard( "Raspberry Pi" );
+
+	AIOAddGPIO( LED0		, GPIO_OUT );
+	AIOAddGPIO( LED1		, GPIO_OUT );
+	AIOAddGPIO( LED2		, GPIO_OUT );
+	AIOAddGPIO( LED3		, GPIO_OUT );
+
+	AIOWriteGPIO( LED0		, SPK_LED_OFF );
+	AIOWriteGPIO( LED1		, SPK_LED_OFF );
+	AIOWriteGPIO( LED2		, SPK_LED_OFF );
+	AIOWriteGPIO( LED3		, SPK_LED_OFF );
+}
+
+// --------------------------------------------------------------------
+void spk_terminate( void ) {
+}
+
 // --------------------------------------------------------------------
 void spk_splash( void ) {
 	smdd_transfer_bitmap( splash_logo );
 	usleep( 5000000 );
+}
+
+// --------------------------------------------------------------------
+void spk_led( SPK_LED_T led, SPK_LED_ON_T led_on ) {
+
+	AIOWriteGPIO( led_pin[ led & 3 ], led_on );
 }

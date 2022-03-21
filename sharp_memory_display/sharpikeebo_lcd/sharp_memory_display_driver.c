@@ -25,12 +25,14 @@
 // --------------------------------------------------------------------
 
 #include <armbianio.h>
+#include <string.h>
 #include "sharp_memory_display_driver.h"
 
 //	Parameter
 static const int		ref_height				= 240;
 
 static unsigned char	invert		= 0;
+static unsigned char	is_blink	= 1;
 static int				threshold	= 128;
 static int				hspi		= -1;
 
@@ -99,23 +101,23 @@ void smdd_terminate( void ) {
 
 // --------------------------------------------------------------------
 void smdd_transfer_bitmap( const unsigned char *p_image ) {
-	int x, y;
-	static unsigned char buffer[ 1 + 50 + 1 ];
-	AIOWriteGPIO( CS		, 1 );
+	int y;
+	unsigned char buffer = 0x80, zero = 0;
+	static unsigned char frame_buffer[ 50 * 240 ];
+	unsigned char *p = frame_buffer;
 
-	buffer[0] = 0x80;
-	AIOWriteSPI( hspi, buffer, 1 );
-	buffer[ 50 + 1 ] = 0;
+	memcpy( frame_buffer, p_image, sizeof(frame_buffer) );
+	AIOWriteGPIO( CS, 1 );
+	AIOWriteSPI( hspi, &buffer, 1 );
 	for( y = 0; y < ref_height; y++ ) {
 		//	line number
-		buffer[0] = mirror[ y + 1 ];
-		for( x = 0; x < 50; x++ ) {
-			buffer[ x + 1 ] = *p_image;
-			p_image++;
-		}
-		AIOWriteSPI( hspi, buffer, 1 + 50 + 1 );
+		buffer = mirror[ y + 1 ];
+		AIOWriteSPI( hspi, &buffer, 1 );
+		AIOWriteSPI( hspi, p, 50 );
+		AIOWriteSPI( hspi, &zero, 1 );
+		p += 50;
 	}
-	AIOWriteGPIO( CS		, 0 );
+	AIOWriteGPIO( CS, 0 );
 }
 
 // --------------------------------------------------------------------
@@ -124,7 +126,12 @@ void smdd_convert_image( const uint32_t *p_src, unsigned char *p_dest, int c ) {
 	uint32_t p;
 	unsigned char d;
 
-	c = (c + 1) * threshold;
+	if( is_blink ) {
+		c = (c + 1) * threshold;
+	}
+	else {
+		c = threshold;
+	}
 	for( i = 0; i < (400 * 240 / 8); i++ ) {
 		d = 0;
 		for( j = 0; j < 8; j++ ) {
@@ -145,6 +152,17 @@ void smdd_set_invert( int inv ) {
 	}
 	else {
 		invert = 0x00;
+	}
+}
+
+// --------------------------------------------------------------------
+void smdd_set_blink( int blink ) {
+
+	if( blink ) {
+		is_blink = 0x01;
+	}
+	else {
+		is_blink = 0x00;
 	}
 }
 
