@@ -4,7 +4,7 @@ Requires=basic.target pigpiod.service
 After=basic.target pigpiod.service
 
 [Service]
-ExecStart=/usr/local/bin/sharpikeebo_lcd
+ExecStart=/usr/local/bin/sharpikeebo_lcd -noblink -invert --
 Type=simple
 Restart=on-failure
 

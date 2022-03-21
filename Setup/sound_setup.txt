@@ -1,0 +1,70 @@
+Bluetooth sound を使えるようにする。
+-------------------------------------------------------------------------------
+
+1. 必要なパッケージをインストールする
+	$ sudo apt-get install pulseaudio pulseaudio-module-bluetooth
+
+2. 設定する
+	$ sudo nano /etc/pulse/default.pa
+
+	最後に下記を追加。
+	# automatically switch to newly-connected devices
+	load-module module-switch-on-connect
+
+3. BTイヤホンとペアリングする
+	$ pulseaudio --start
+	$ bluetoothctl
+
+	Agent registered
+	[CHG] Controller ZZ:ZZ:ZZ:ZZ:ZZ:ZZ Pairable: yes
+	[bluetooth]#
+
+	この [bluetooth] プロンプトでいくつかのコマンドを実行する。
+
+	[bluetooth]# power on
+	Changing power on succeeded
+	[bluetooth]# agent on
+	Agent is already registered
+	[bluetooth]# scan on
+	Discovery started
+	[NEW] Device XX:XX:XX:XX:XX:XX YYYY
+	[bluetooth]# pair XX:XX:XX:XX:XX:XX
+	Attempting to pair with XX:XX:XX:XX:XX:XX
+	[CHG] Device XX:XX:XX:XX:XX:XX Connected: yes
+	[CHG] Device XX:XX:XX:XX:XX:XX UUIDs: XXXXXXXX-0000-1000-8000-XXXXXXXXXX
+	[CHG] Device XX:XX:XX:XX:XX:XX UUIDs: XXXXXXXX-0000-1000-8000-XXXXXXXXXX
+	[CHG] Device XX:XX:XX:XX:XX:XX UUIDs: XXXXXXXX-0000-1000-8000-XXXXXXXXXX
+	[CHG] Device XX:XX:XX:XX:XX:XX UUIDs: XXXXXXXX-0000-1000-8000-XXXXXXXXXX
+	[CHG] Device XX:XX:XX:XX:XX:XX ServicesResolved: yes
+	[CHG] Device XX:XX:XX:XX:XX:XX Paired: yes
+	Pairing successful
+	[bluetooth]# trust XX:XX:XX:XX:XX:XX
+	[CHG] Device 20:21:05:24:65:B4 Trusted: yes
+	Changing 20:21:05:24:65:B4 trust succeeded
+	[W8]# quit
+
+	手早くやらないと、イヤホンの方がタイムアウトする場合があるので注意。
+
+4. 動作確認
+	$ aplay /usr/share/sounds/alsa/Front_Center.wav
+
+	「フロント、センター」と聞こえればOK。
+
+5. 起動時にサウンドと BTイヤホンの接続を確立する
+
+	.bashrc の最後に下記を追加しておく
+
+	pulseaudio --start
+	bluetoothctl power on
+	bluetoothctl connect XX:XX:XX:XX:XX:XX
+	alias btsp='bluetoothctl connect XX:XX:XX:XX:XX:XX'
+
+6. mp3 を再生できるようにする
+	$ sudo apt-get install mpg321
+
+		mpg321 xxxx.mp3 で再生できるようになる。
+
+	$ sudo apt-get install cmus
+
+		cmus でファイル選択式の再生ツールが起動する。
+		起動直後は表示が崩れていてわかりづらいが [5] を押すとファイル選択に入れる。

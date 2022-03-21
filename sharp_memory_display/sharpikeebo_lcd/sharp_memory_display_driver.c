@@ -36,19 +36,9 @@ static unsigned char	is_blink	= 1;
 static int				threshold	= 128;
 static int				hspi		= -1;
 
-#define LED0			15		//	LEFT-UP
-#define LED1			37		//	RIGHT-UP
-#define LED2			35		//	LEFT-DOWN
-#define LED3			33		//	RIGHT-DOWN
-#define LED_ON			1
-#define LED_OFF			0
-
 #define CS				16
 #define DISPON			18
 #define EXTCOMIN		22
-
-#define	INPUT			0
-#define	OUTPUT			1
 
 #define SPEED			4000000
 

@@ -108,11 +108,14 @@ int main( int argc, char *argv[] ) {
 
 	c = 0;
 	while( is_active ) {
+		spk_led( SPK_LED_LU, SPK_LED_ON );
 		fbc_capture( p_capture );
+		spk_led( SPK_LED_LU, SPK_LED_OFF );
 		smdd_convert_image( p_capture, p_bitmap, c );
 		smdd_transfer_bitmap( p_bitmap );
 		c = 1 - c;
 	}
+	spk_led( SPK_LED_LU, SPK_LED_ON );
 	smdd_terminate();
 	spk_terminate();
 	fbc_terminate();

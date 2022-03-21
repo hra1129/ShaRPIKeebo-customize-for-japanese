@@ -22,3 +22,11 @@ sharpikeebo_lcd.o: sharpikeebo_lcd.c sharpikeebo_effects.h sharp_memory_display_
 
 clean:
 	rm -rf *.o sharpikeebo_lcd
+
+install: sharpikeebo_lcd
+	echo "Install sharpikeebo_lcd service."
+	sudo systemctl stop sharpikeebo_lcd.service
+	sudo cp ./sharpikeebo_lcd /usr/local/bin/
+	sudo cp ./sharpikeebo_lcd.service /etc/systemd/system/
+	sudo systemctl enable sharpikeebo_lcd.service
+	sudo systemctl start sharpikeebo_lcd.service
