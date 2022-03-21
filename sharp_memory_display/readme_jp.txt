@@ -22,3 +22,17 @@ SharpMemoryDisplay にターミナルの内容を表示する
 	(3) sharpikeebo_lcdサービスを有効化して起動する
 		$ sudo systemctl enable sharpikeebo_lcd
 		$ sudo systemctl start sharpikeebo_lcd
+
+3. オプション指定
+	sharpikeebo_lcd.service の下記の部分にオプションを指定できます。
+
+		ExecStart=/usr/local/bin/sharpikeebo_lcd
+
+	オプションは下記のものが指定できます。
+	-nosplash ....... 起動時にロゴを表示しない
+	-invert ......... ターミナルを反転表示する
+	-noblink ........ 点滅3値表示をやめて、点滅しない2値表示にする
+	-threshold xxx .. 二値化の閾値
+
+	例)
+		ExecStart=/usr/local/bin/sharpikeebo_lcd -noblink -invert

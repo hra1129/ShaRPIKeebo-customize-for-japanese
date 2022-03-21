@@ -25,3 +25,17 @@ Display terminal contents on SharpMemoryDisplay
 
 		$ sudo systemctl enable sharpikeebo_lcd
 		$ sudo systemctl start sharpikeebo_lcd
+
+3. Options
+	Options can be specified in the following part of sharpikeebo_lcd.service.
+
+		ExecStart=/usr/local/bin/sharpikeebo_lcd
+
+	The following options can be specified:
+		-nosplash ....... No logo at startup
+		-invert ......... Inverted terminal display
+		-noblink ........ Stop blinking tri-level display and use non-blinking bi-level display
+		-threshold xxx .. Binarization threshold
+
+	ex.)
+		ExecStart=/usr/local/bin/sharpikeebo_lcd -noblink -invert -threshold 100
