@@ -111,10 +111,11 @@ void smdd_transfer_bitmap( const unsigned char *p_image ) {
 }
 
 // --------------------------------------------------------------------
-void smdd_convert_image( const uint32_t *p_src, unsigned char *p_dest, int c ) {
-	int i, j;
+void smdd_convert_image( const uint32_t *p_src, unsigned char *p_dest, int c, int zoom_x, int zoom_y, int zoom_level ) {
+	int i, x, y, width, height, zoom, bit_count, line_count;
 	uint32_t p;
 	unsigned char d;
+	const uint32_t *p_src_left;
 
 	if( is_blink ) {
 		c = (c + 1) * threshold;
@@ -122,15 +123,34 @@ void smdd_convert_image( const uint32_t *p_src, unsigned char *p_dest, int c ) {
 	else {
 		c = threshold;
 	}
-	for( i = 0; i < (400 * 240 / 8); i++ ) {
-		d = 0;
-		for( j = 0; j < 8; j++ ) {
-			d <<= 1;
-			p = *(p_src++);
-			p = (p & 255) + ((p >> 8) & 255) + ((p >> 16) & 255);
-			d += ( p > c );
+
+	width		= 400 >> zoom_level;
+	height		= 240 >> zoom_level;
+	p_src		+= zoom_x + zoom_y * 400;
+	d			= 0;
+	bit_count	= 0;
+	zoom		= 1 << zoom_level;
+	line_count	= 0;
+
+	for( y = 0; y < height; y++ ) {
+		p_src_left	= p_src;
+		for( line_count = 0; line_count < zoom; line_count++ ) {
+			for( x = 0; x < width; x++ ) {
+				p = *(p_src++);
+				p = (p & 255) + ((p >> 8) & 255) + ((p >> 16) & 255);
+				for( i = 0; i < zoom; i++ ) {
+					d <<= 1;
+					d += ( p > c );
+				}
+				bit_count += zoom;
+				if( bit_count >= 8 ) {
+					*(p_dest++) = d ^ invert;
+					bit_count = 0;
+				}
+			}
+			p_src = p_src_left;
 		}
-		*(p_dest++) = d ^ invert;
+		p_src += 400;
 	}
 }
 

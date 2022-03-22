@@ -37,3 +37,14 @@ SharpMemoryDisplay にターミナルの内容を表示する
 
 	例)
 		ExecStart=/usr/local/bin/sharpikeebo_lcd -noblink -invert
+
+4. 操作
+
+	                          [B]
+	      [U]         (P)(P)         [ ]
+	[L]         [R]   ( )( )   [ ]         [ ]
+	      [D]                        [ ]
+
+	[B] ............. ズーム倍率の変更 ( x1 → x2 → x4 → x8 → x1 )
+	[U][L][R][D] .... スクロール位置移動
+	(P) ............. Power LED

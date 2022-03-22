@@ -66,9 +66,9 @@ void spk_splash( void );
 // --------------------------------------------------------------------
 typedef enum {
 	SPK_LED_LU = 0,
-	SPL_LED_RU = 1,
+	SPK_LED_RU = 1,
 	SPK_LED_LD = 2,
-	SPL_LED_RD = 3,
+	SPK_LED_RD = 3,
 } SPK_LED_T;
 
 typedef enum {
@@ -77,5 +77,26 @@ typedef enum {
 } SPK_LED_ON_T;
 
 void spk_led( SPK_LED_T led, SPK_LED_ON_T led_on );
+
+// --------------------------------------------------------------------
+//	spk_get_key_state
+//	input)
+//		none
+//	output)
+//		bit7 ... 0: up off    , 1: up on
+//		bit6 ... 0: left off  , 1: left on
+//		bit5 ... 0: right off , 1: right on
+//		bit4 ... 0: down off  , 1: down on
+//		bit0 ... 0: button off, 1: button on
+// --------------------------------------------------------------------
+typedef enum {
+	SPK_KEY_UP		= 1 << 7,
+	SPK_KEY_LEFT	= 1 << 6,
+	SPK_KEY_RIGHT	= 1 << 5,
+	SPK_KEY_DOWN	= 1 << 4,
+	SPK_KEY_BUTTON	= 1 << 0,
+} SPK_KEY_STATE_T;
+
+SPK_KEY_STATE_T spk_get_key_state( void );
 
 #endif

@@ -40,3 +40,14 @@ Display terminal contents on SharpMemoryDisplay
 
 	ex.)
 		ExecStart=/usr/local/bin/sharpikeebo_lcd -noblink -invert -threshold 100
+
+4. Operations
+
+	                          [B]
+	      [U]         (P)(P)         [ ]
+	[L]         [R]   ( )( )   [ ]         [ ]
+	      [D]                        [ ]
+
+	[B] ............. Change the magnification rate ( x1 --> x2 --> x4 --> x8 --> x1 )
+	[U][L][R][D] .... Scroll position
+	(P) ............. Power LEDs
