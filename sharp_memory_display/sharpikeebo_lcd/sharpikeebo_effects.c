@@ -23,6 +23,7 @@
 // --------------------------------------------------------------------
 
 #include <unistd.h>
+#include <string.h>
 #include <armbianio.h>
 #include "sharpikeebo_effects.h"
 #include "sharp_memory_display_driver.h"
@@ -72,9 +73,30 @@ void spk_terminate( void ) {
 }
 
 // --------------------------------------------------------------------
+static void animation_logo_appearance( unsigned char *p_image, int i ) {
+	int y, src_y;
+
+	for( y = 0; y < 240; y++ ) {
+		src_y = (y - 120) * i / 32 + 120;
+		memcpy( p_image, splash_logo + src_y * 50, 50 );
+		p_image += 50;
+	}
+}
+
+// --------------------------------------------------------------------
 void spk_splash( void ) {
-	smdd_transfer_bitmap( splash_logo );
-	usleep( 5000000 );
+	int i;
+	unsigned char frame_buffer[ 50 * 240 ];
+
+	for( i = 0; i <= 32; i++ ) {
+		animation_logo_appearance( frame_buffer, i );
+		smdd_transfer_bitmap( frame_buffer );
+	}
+	usleep( 2000000 );
+	for( i = 31; i >= 0; i-- ) {
+		animation_logo_appearance( frame_buffer, i );
+		smdd_transfer_bitmap( frame_buffer );
+	}
 }
 
 // --------------------------------------------------------------------

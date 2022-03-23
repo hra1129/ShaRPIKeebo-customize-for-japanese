@@ -52,8 +52,10 @@ void smdd_terminate( void );
 //		p_image .... 1bpp image data
 //	output)
 //		none
+//	comment)
+//		The contents of p_image are destroyed.
 // --------------------------------------------------------------------
-void smdd_transfer_bitmap( const unsigned char *p_image );
+void smdd_transfer_bitmap( unsigned char *p_image );
 
 // --------------------------------------------------------------------
 //	smdd_convert_image()

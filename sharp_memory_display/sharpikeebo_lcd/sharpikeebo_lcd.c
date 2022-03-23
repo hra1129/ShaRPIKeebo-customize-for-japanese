@@ -27,19 +27,64 @@
 #include <signal.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
 
 #include "sharp_memory_display_driver.h"
 #include "sharpikeebo_effects.h"
 #include "fb_convert.h"
 
 //static int hspi;
-static volatile int is_active = 0;
+static volatile int is_active = 1;
 static int zoom_x, zoom_y, zoom_level;
 static const int scroll_speed = 4;
+
+ union semun {
+	int val;
+	struct semid_ds *buf;
+	unsigned short int *array;
+	struct seminfo *__buf;
+};
 
 // --------------------------------------------------------------------
 static void shutdown_handler( int signal ) {
 	is_active = 0;
+}
+
+// --------------------------------------------------------------------
+static void set_shutdown_handler( void ) {
+	struct sigaction sa;
+
+	sa.sa_handler = shutdown_handler;
+	sigemptyset( &sa.sa_mask );
+	sa.sa_flags = 0;
+	sigaction( SIGINT, &sa, NULL );
+}
+
+// --------------------------------------------------------------------
+static void command_line_options( int argc, char *argv[], int *p_do_splash ) {
+	int i;
+
+	// analyze the command-line options
+	for( i = 1; i < argc; i++ ) {
+		if( strcmp( argv[i], "-nosplash" ) == 0 ) {
+			*p_do_splash = 0;
+		}
+		else if( strcmp( argv[i], "-invert" ) == 0 ) {
+			smdd_set_invert( 1 );
+		}
+		else if( strcmp( argv[i], "-thresold" ) == 0 && (i + 1) < argc ) {
+			i++;
+			smdd_set_threshold( atoi( argv[i] ) );
+		}
+		else if( strcmp( argv[i], "-noblink" ) == 0 ) {
+			smdd_set_blink( 0 );
+		}
+		else {
+			fprintf( stderr, "[WARNING] Unknown command line option %s.\n", argv[i] );
+		}
+	}
 }
 
 // --------------------------------------------------------------------
@@ -84,54 +129,62 @@ static void zoom_mode( void ) {
 }
 
 // --------------------------------------------------------------------
+static void main_process( int sem_id, uint32_t *p_capture, unsigned char *p_bitmap ) {
+	int c;
+	struct sembuf lock_operations;
+	struct sembuf unlock_operations;
+
+	lock_operations.sem_num = 0;
+	lock_operations.sem_op = -1;
+	lock_operations.sem_flg = SEM_UNDO;
+	unlock_operations.sem_num = 0;
+	unlock_operations.sem_op = 1;
+	unlock_operations.sem_flg = SEM_UNDO;
+
+	c = 0;
+	zoom_x = 0;
+	zoom_y = 0;
+	zoom_level = 0;
+	while( is_active ) {
+		fbc_capture( p_capture );
+
+		semop( sem_id, &lock_operations, 1 );
+		zoom_mode();
+		spk_led( SPK_LED_LU + c, SPK_LED_ON );
+		smdd_convert_image( p_capture, p_bitmap, c, zoom_x, zoom_y, zoom_level );
+		spk_led( SPK_LED_LU + c, SPK_LED_OFF );
+		smdd_transfer_bitmap( p_bitmap );
+		semop( sem_id, &unlock_operations, 1 );
+
+		c = 1 - c;
+	}
+}
+
+// --------------------------------------------------------------------
 int main( int argc, char *argv[] ) {
-	int size, c, i;
-	struct sigaction sa;
+	int size;
 	uint32_t *p_capture;
 	int width, height;
 	unsigned char *p_bitmap;
 	int do_splash = 1;
+	key_t key;
+	int sem_id;
+	union semun sem_arg;
+	unsigned short values;
 
 	printf( "framebuffer transfer\n" );
 	printf( "===========================\n" );
 	printf( "2022/Mar/12nd t.hara\n" );
 
-	sa.sa_handler = shutdown_handler;
-	sigemptyset( &sa.sa_mask );
-	sa.sa_flags = 0;
-	sigaction( SIGINT, &sa, NULL );
-	is_active = 1;
-
+	set_shutdown_handler();
 	if( !fbc_initialize() ) {
 		return 2;
 	}
-
 	spk_initialize();
-
 	if( !smdd_initialize() ) {
 		return 3;
 	}
-
-	// analyze the command-line options
-	for( i = 1; i < argc; i++ ) {
-		if( strcmp( argv[i], "-nosplash" ) == 0 ) {
-			do_splash = 0;
-		}
-		else if( strcmp( argv[i], "-invert" ) == 0 ) {
-			smdd_set_invert( 1 );
-		}
-		else if( strcmp( argv[i], "-thresold" ) == 0 && (i + 1) < argc ) {
-			i++;
-			smdd_set_threshold( atoi( argv[i] ) );
-		}
-		else if( strcmp( argv[i], "-noblink" ) == 0 ) {
-			smdd_set_blink( 0 );
-		}
-		else {
-			fprintf( stderr, "[WARNING] Unknown command line option %s.\n", argv[i] );
-		}
-	}
-
+	command_line_options( argc, argv, &do_splash );
 	if( do_splash ) {
 		spk_splash();
 	}
@@ -149,19 +202,22 @@ int main( int argc, char *argv[] ) {
 		return 5;
 	}
 
-	c = 0;
-	zoom_x = 0;
-	zoom_y = 0;
-	zoom_level = 0;
-	while( is_active ) {
-		zoom_mode();
-		fbc_capture( p_capture );
-		spk_led( SPK_LED_LU + c, SPK_LED_ON );
-		smdd_convert_image( p_capture, p_bitmap, c, zoom_x, zoom_y, zoom_level );
-		spk_led( SPK_LED_LU + c, SPK_LED_OFF );
-		smdd_transfer_bitmap( p_bitmap );
-		c = 1 - c;
+	key = ftok( argv[0], 1 );
+	sem_id = semget( key, 1, 0666 | IPC_CREAT );
+	if( sem_id == -1 ) {
+		fprintf( stderr, "[ERROR] Cannot create semaphore.\n" );
+		return 6;
 	}
+    values = 1;
+    sem_arg.array = &values;
+    semctl( sem_id, 0, SETVAL, sem_arg );
+
+	main_process( sem_id, p_capture, p_bitmap );
+
+	semctl( sem_id, 1, IPC_RMID, NULL );
+
+	free( p_bitmap );
+	free( p_capture );
 	spk_led( SPK_LED_LU, SPK_LED_ON );
 	spk_led( SPK_LED_RU, SPK_LED_ON );
 	smdd_terminate();

@@ -90,13 +90,11 @@ void smdd_terminate( void ) {
 }
 
 // --------------------------------------------------------------------
-void smdd_transfer_bitmap( const unsigned char *p_image ) {
+void smdd_transfer_bitmap( unsigned char *p_image ) {
 	int y;
 	unsigned char buffer = 0x80, zero = 0;
-	static unsigned char frame_buffer[ 50 * 240 ];
-	unsigned char *p = frame_buffer;
+	unsigned char *p = p_image;
 
-	memcpy( frame_buffer, p_image, sizeof(frame_buffer) );
 	AIOWriteGPIO( CS, 1 );
 	AIOWriteSPI( hspi, &buffer, 1 );
 	for( y = 0; y < ref_height; y++ ) {
