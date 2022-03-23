@@ -51,3 +51,6 @@ Display terminal contents on SharpMemoryDisplay
 	[B] ............. Change the magnification rate ( x1 --> x2 --> x4 --> x8 --> x1 )
 	[U][L][R][D] .... Scroll position
 	(P) ............. Power LEDs
+
+5. Compile and Install
+	$ make install
