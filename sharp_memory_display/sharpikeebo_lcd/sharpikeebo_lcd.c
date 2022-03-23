@@ -146,16 +146,14 @@ static void main_process( int sem_id, uint32_t *p_capture, unsigned char *p_bitm
 	zoom_y = 0;
 	zoom_level = 0;
 	while( is_active ) {
-		fbc_capture( p_capture );
-
 		semop( sem_id, &lock_operations, 1 );
+		fbc_capture( p_capture );
 		zoom_mode();
 		spk_led( SPK_LED_LU + c, SPK_LED_ON );
 		smdd_convert_image( p_capture, p_bitmap, c, zoom_x, zoom_y, zoom_level );
 		spk_led( SPK_LED_LU + c, SPK_LED_OFF );
 		smdd_transfer_bitmap( p_bitmap );
 		semop( sem_id, &unlock_operations, 1 );
-
 		c = 1 - c;
 	}
 }
@@ -170,7 +168,6 @@ int main( int argc, char *argv[] ) {
 	key_t key;
 	int sem_id;
 	union semun sem_arg;
-	unsigned short values;
 
 	printf( "framebuffer transfer\n" );
 	printf( "===========================\n" );
@@ -208,8 +205,7 @@ int main( int argc, char *argv[] ) {
 		fprintf( stderr, "[ERROR] Cannot create semaphore.\n" );
 		return 6;
 	}
-    values = 1;
-    sem_arg.array = &values;
+    sem_arg.val = 1;
     semctl( sem_id, 0, SETVAL, sem_arg );
 
 	main_process( sem_id, p_capture, p_bitmap );
