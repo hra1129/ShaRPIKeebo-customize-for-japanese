@@ -95,6 +95,16 @@ GLIB_BACKBUFFER_T *glib_get_display( void );
 void glib_release_backbuffer( GLIB_BACKBUFFER_T *p_image );
 
 // --------------------------------------------------------------------
+//	glib_clear_buffer()
+//	input)
+//		p_image .... target backbuffer pointer
+//		c .......... pixel value
+//	output)
+//		none
+// --------------------------------------------------------------------
+void glib_clear_buffer( GLIB_BACKBUFFER_T *p_image, uint8_t c );
+
+// --------------------------------------------------------------------
 //	glib_pixel()
 //	input)
 //		p_image .... target backbuffer pointer
@@ -119,6 +129,20 @@ void glib_pixel( GLIB_BACKBUFFER_T *p_image, int x, int y, uint8_t c );
 //		none
 // --------------------------------------------------------------------
 void glib_line( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c );
+
+// --------------------------------------------------------------------
+//	glib_fill_rect()
+//	input)
+//		p_image .... target backbuffer pointer
+//		x1 ......... start X position
+//		y1 ......... start Y position
+//		x2 ......... end X position
+//		y2 ......... end Y position
+//		c .......... pixel value
+//	output)
+//		none
+// --------------------------------------------------------------------
+void glib_fill_rect( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c );
 
 // --------------------------------------------------------------------
 //	glib_led

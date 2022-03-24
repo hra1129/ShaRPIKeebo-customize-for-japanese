@@ -136,7 +136,6 @@ void glib_terminate( void ) {
 		unlock_operations.sem_flg = SEM_UNDO;
 		semop( sem_id, &unlock_operations, 1 );
 	}
-	AIOShutdown();
 }
 
 // --------------------------------------------------------------------
@@ -198,6 +197,12 @@ void glib_release_backbuffer( GLIB_BACKBUFFER_T *p_image ) {
 }
 
 // --------------------------------------------------------------------
+void glib_clear_buffer( GLIB_BACKBUFFER_T *p_image, uint8_t c ) {
+
+	memset( p_image->image, c, p_image->width * p_image->height );
+}
+
+// --------------------------------------------------------------------
 void glib_pixel( GLIB_BACKBUFFER_T *p_image, int x, int y, uint8_t c ) {
 
 	if( x < 0 || y < 0 || x >= p_image->width || y >= p_image->height ) {
@@ -240,6 +245,46 @@ void glib_line( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint
 				x1 += vx;
 			}
 		}
+	}
+}
+
+// --------------------------------------------------------------------
+static void inline sort2( int *p1, int *p2 ) {
+	int t;
+
+	if( *p1 < *p2 ) return;
+	t = *p1;
+	*p1 = *p2;
+	*p2 = t;
+}
+
+// --------------------------------------------------------------------
+void glib_fill_rect( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c ) {
+	int w, y, pos;
+
+	//	clipping
+	sort2( &x1, &x2 );
+	sort2( &y1, &y2 );
+	if( x1 >= p_image->width || x2 < 0 || y1 >= p_image->height || y2 < 0 ) {
+		return;
+	}
+	if( x1 < 0 ) {
+		x1 = 0;
+	}
+	if( y1 < 0 ) {
+		y1 = 0;
+	}
+	if( x2 >= p_image->width ) {
+		x2 = p_image->width - 1;
+	}
+	if( y2 >= p_image->height ) {
+		y2 = p_image->height - 1;
+	}
+	w = x2 - x1 + 1;
+	pos = x1 + p_image->width * y1;
+	for( y = y1; y <= y2; y++ ) {
+		memset( p_image->image + pos, c, w );
+		pos += p_image->width;
 	}
 }
 

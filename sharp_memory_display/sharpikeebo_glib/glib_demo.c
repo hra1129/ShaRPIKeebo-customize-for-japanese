@@ -30,17 +30,31 @@
 // --------------------------------------------------------------------
 static void demo( void ) {
 	GLIB_BACKBUFFER_T *p_screen;
-	int x1, y1, x2, y2;
+	int x1, y1, x2, y2, i, j;
 
 	p_screen = glib_get_display();
 
-	memset( p_screen->image, 0, 400 * 240 );
-	for(;;) {
-		x1 = rand() % 400;
-		y1 = rand() % 240;
-		x2 = rand() % 400;
-		y2 = rand() % 240;
-		glib_line( p_screen, x1, y1, x2, y2, 255 );
+	for( j = 0; j < 500; j++ ) {
+		glib_clear_buffer( p_screen, 0 );
+		for( i = 0; i < 50; i++ ) {
+			x1 = rand() % 400;
+			y1 = rand() % 240;
+			x2 = rand() % 400;
+			y2 = rand() % 240;
+			glib_line( p_screen, x1, y1, x2, y2, 255 );
+		}
+		glib_display( p_screen );
+	}
+
+	for( j = 0; j < 500; j++ ) {
+		glib_clear_buffer( p_screen, 0 );
+		for( i = 0; i < 50; i++ ) {
+			x1 = rand() % 400;
+			y1 = rand() % 240;
+			x2 = rand() % 400;
+			y2 = rand() % 240;
+			glib_fill_rect( p_screen, x1, y1, x2, y2, 255 );
+		}
 		glib_display( p_screen );
 	}
 }
