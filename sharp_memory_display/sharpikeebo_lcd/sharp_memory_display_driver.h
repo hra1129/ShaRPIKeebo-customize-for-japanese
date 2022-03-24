@@ -47,6 +47,15 @@ int smdd_initialize( void );
 void smdd_terminate( void );
 
 // --------------------------------------------------------------------
+//	smdd_display()
+//	input)
+//		switch_on .... 0: display off, 1: display on
+//	output)
+//		none
+// --------------------------------------------------------------------
+void smdd_display( int switch_on );
+
+// --------------------------------------------------------------------
 //	smdd_transfer_bitmap()
 //	input)
 //		p_image .... 1bpp image data

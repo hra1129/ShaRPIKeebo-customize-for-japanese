@@ -67,6 +67,8 @@ static const unsigned char mirror[256] = {
 
 // --------------------------------------------------------------------
 int smdd_initialize( void ) {
+	unsigned char frame_buffer[ 50 * 240 ] = { 0 };
+
 	AIOAddGPIO( CS			, GPIO_OUT );
 	AIOAddGPIO( DISPON		, GPIO_OUT );
 	AIOAddGPIO( EXTCOMIN	, GPIO_OUT );
@@ -77,9 +79,13 @@ int smdd_initialize( void ) {
 		return 0;
 	}
 
-	AIOWriteGPIO( DISPON	, 1 );
+	AIOWriteGPIO( DISPON	, 0 );
 	AIOWriteGPIO( EXTCOMIN	, 0 );
 	AIOWriteGPIO( CS		, 0 );
+
+	//	clear display memory
+	smdd_transfer_bitmap( frame_buffer );
+	AIOWriteGPIO( DISPON	, 1 );
 	return 1;
 }
 
@@ -87,6 +93,11 @@ int smdd_initialize( void ) {
 void smdd_terminate( void ) {
 	AIOWriteGPIO( DISPON, 0 );
 	AIOShutdown();
+}
+
+// --------------------------------------------------------------------
+void smdd_display( int switch_on ) {
+	AIOWriteGPIO( DISPON	, switch_on );
 }
 
 // --------------------------------------------------------------------

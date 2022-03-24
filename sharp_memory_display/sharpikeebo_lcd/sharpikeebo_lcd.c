@@ -199,7 +199,7 @@ int main( int argc, char *argv[] ) {
 		return 5;
 	}
 
-	key = ftok( argv[0], 1 );
+	key = ftok( "/usr/local/bin/sharpikeebo_lcd", 1 );
 	sem_id = semget( key, 1, 0666 | IPC_CREAT );
 	if( sem_id == -1 ) {
 		fprintf( stderr, "[ERROR] Cannot create semaphore.\n" );

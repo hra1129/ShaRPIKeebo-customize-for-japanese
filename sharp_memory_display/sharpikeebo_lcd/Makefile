@@ -1,5 +1,5 @@
 CFLAGS=-c -Wall -O2 -DSPI_BUS_NUMBER=0
-LIBS = -lpthread -larmbianio
+LIBS = -pthread -larmbianio
 all: sharpikeebo_lcd
 
 sharpikeebo_lcd: sharpikeebo_lcd.o sharpikeebo_effects.o sharp_memory_display_driver.o fb_convert.o
