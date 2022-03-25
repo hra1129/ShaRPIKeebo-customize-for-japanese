@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sharpikeebo_glib.h"
+#include "startup_logo.h"
 
 // --------------------------------------------------------------------
 static void demo( void ) {
@@ -33,6 +34,12 @@ static void demo( void ) {
 	int x1, y1, x2, y2, i, j;
 
 	p_screen = glib_get_display();
+
+	for( j = 0; j < 500; j++ ) {
+		glib_clear_buffer( p_screen, 0 );
+		glib_copy( p_startup_logo, 0, 0, 399, 239, p_screen, j - 400, 0 );
+		glib_display( p_screen );
+	}
 
 	for( j = 0; j < 500; j++ ) {
 		glib_clear_buffer( p_screen, 0 );

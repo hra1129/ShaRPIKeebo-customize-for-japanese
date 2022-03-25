@@ -249,7 +249,7 @@ void glib_line( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint
 }
 
 // --------------------------------------------------------------------
-static void inline sort2( int *p1, int *p2 ) {
+static void inline _sort2( int *p1, int *p2 ) {
 	int t;
 
 	if( *p1 < *p2 ) return;
@@ -263,8 +263,8 @@ void glib_fill_rect( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2,
 	int w, y, pos;
 
 	//	clipping
-	sort2( &x1, &x2 );
-	sort2( &y1, &y2 );
+	_sort2( &x1, &x2 );
+	_sort2( &y1, &y2 );
 	if( x1 >= p_image->width || x2 < 0 || y1 >= p_image->height || y2 < 0 ) {
 		return;
 	}
@@ -280,11 +280,87 @@ void glib_fill_rect( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2,
 	if( y2 >= p_image->height ) {
 		y2 = p_image->height - 1;
 	}
+	//	drawing
 	w = x2 - x1 + 1;
 	pos = x1 + p_image->width * y1;
 	for( y = y1; y <= y2; y++ ) {
 		memset( p_image->image + pos, c, w );
 		pos += p_image->width;
+	}
+}
+
+// --------------------------------------------------------------------
+int _clip( int *p_sx1, int *p_sx2, int *p_dx1, int src_width, int dest_width ) {
+	int dx2;
+
+	//	Handling of cases where the specified area of the transfer source extends beyond the source back buffer
+	//	転送元の領域指定が、転送元のバックバッファーをはみ出す場合の処理 
+	dx2 = *p_dx1 + (*p_sx2 - *p_sx1);
+	if( *p_sx1 < 0 && *p_sx2 < 0 ) return 0;
+	if( *p_sx1 >= src_width && *p_sx2 >= src_width ) return 0;
+	if( *p_sx1 < 0 ) {
+		*p_dx1 += -*p_sx1;
+		*p_sx1 = 0;
+	}
+	if( *p_sx2 < 0 ) {
+		dx2 += -*p_sx2;
+		*p_sx2 = 0;
+	}
+	if( *p_sx1 >= src_width ) {
+		*p_dx1 -= *p_sx1 - src_width;
+	}
+	if( *p_sx2 >= src_width ) {
+		dx2 -= *p_sx2 - src_width;
+	}
+	//	Handling of cases where the destination back buffer is exceeded
+	//	転送先バックバッファーをはみ出す場合の処理 
+	if( *p_dx1 < 0 && dx2 < 0 ) return 0;
+	if( *p_dx1 >= dest_width && dx2 >= dest_width ) return 0;
+	if( *p_dx1 < 0 ) {
+		*p_sx1 += -*p_dx1;
+		*p_dx1 = 0;
+	}
+	if( dx2 < 0 ) {
+		*p_sx2 += -dx2;
+		dx2 = 0;
+	}
+	if( *p_dx1 >= dest_width ) {
+		*p_sx1 -= *p_dx1 - dest_width;
+	}
+	if( dx2 >= dest_width ) {
+		*p_sx2 -= dx2 - dest_width;
+	}
+	return 1;
+}
+
+// --------------------------------------------------------------------
+void glib_copy( GLIB_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, GLIB_BACKBUFFER_T *p_dest_image, int dx1, int dy1 ) {
+	int x, y, vx, vy;
+	uint8_t *p_src, *p_dest, d;
+	uint8_t *p_src_st, *p_dest_st;
+
+	//	clipping
+	if( !_clip( &sx1, &sx2, &dx1, p_src_image->width , p_dest_image->width  ) ) return;
+	if( !_clip( &sy1, &sy2, &dy1, p_src_image->height, p_dest_image->height ) ) return;
+
+	vx			= (sx1 < sx2) ? 1 : -1;
+	vy			= (sy1 < sy2) ? 1 : -1;
+	p_src		= p_src_image->image  + (sx1 + sy1 * p_src_image->width );
+	p_dest		= p_dest_image->image + (dx1 + dy1 * p_dest_image->width);
+	p_src_st	= p_src;
+	p_dest_st	= p_dest;
+	for( y = sy1; y != sy2; y += vy ) {
+		p_src	= p_src_st;
+		p_dest	= p_dest_st;
+		for( x = sx1; x != sx2; x += vx ) {
+			d = *(p_src++);
+			if( d ) {
+				*p_dest = d;
+			}
+			p_dest++;
+		}
+		p_src_st	+= p_src_image->width * vy;
+		p_dest_st	+= p_dest_image->width * vy;
 	}
 }
 

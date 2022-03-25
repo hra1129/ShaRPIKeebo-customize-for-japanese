@@ -145,6 +145,22 @@ void glib_line( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint
 void glib_fill_rect( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c );
 
 // --------------------------------------------------------------------
+//	glib_copy()
+//	input)
+//		p_src_image .... source backbuffer pointer
+//		sx1 ............ start X position on source
+//		sy1 ............ start Y position on source
+//		sx2 ............ end X position on source
+//		sy2 ............ end Y position on source
+//		p_dest_image ... destination backbuffer pointer
+//		dx1 ............ start X position on destination
+//		dy1 ............ start Y position on destination
+//	output)
+//		none
+// --------------------------------------------------------------------
+void glib_copy( GLIB_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, GLIB_BACKBUFFER_T *p_dest_image, int dx1, int dy1 );
+
+// --------------------------------------------------------------------
 //	glib_led
 //	input)
 //		led ...... 0: Left-up, 1: Right-up, 2: Left-down, 3: Right-down
