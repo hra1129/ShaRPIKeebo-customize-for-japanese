@@ -203,12 +203,21 @@ void spk_clear_buffer( SPK_BACKBUFFER_T *p_image, uint8_t c ) {
 }
 
 // --------------------------------------------------------------------
-void spk_pixel( SPK_BACKBUFFER_T *p_image, int x, int y, uint8_t c ) {
+void spk_set_pixel( SPK_BACKBUFFER_T *p_image, int x, int y, uint8_t c ) {
 
 	if( x < 0 || y < 0 || x >= p_image->width || y >= p_image->height ) {
 		return;
 	}
-	p_image->image[ x + y * 400 ] = c;
+	p_image->image[ x + y * p_image->width ] = c;
+}
+
+// --------------------------------------------------------------------
+uint8_t spk_get_pixel( SPK_BACKBUFFER_T *p_image, int x, int y ) {
+
+	if( x < 0 || y < 0 || x >= p_image->width || y >= p_image->height ) {
+		return 0;
+	}
+	return p_image->image[ x + y * p_image->width ];
 }
 
 // --------------------------------------------------------------------
@@ -216,7 +225,7 @@ void spk_line( SPK_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_
 	int w, h, vx, vy, n, i;
 
 	if( x1 == x2 && y1 == y2 ) {
-		spk_pixel( p_image, x1, y1, c );
+		spk_set_pixel( p_image, x1, y1, c );
 		return;
 	}
 	w = abs( x2 - x1 );
@@ -226,7 +235,7 @@ void spk_line( SPK_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_
 	n = 0;
 	if( w > h ) {
 		for( i = 0; i <= w; i++ ) {
-			spk_pixel( p_image, x1, y1, c );
+			spk_set_pixel( p_image, x1, y1, c );
 			x1 += vx;
 			n += h;
 			if( n >= w ) {
@@ -237,7 +246,7 @@ void spk_line( SPK_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_
 	}
 	else {
 		for( i = 0; i <= h; i++ ) {
-			spk_pixel( p_image, x1, y1, c );
+			spk_set_pixel( p_image, x1, y1, c );
 			y1 += vy;
 			n += w;
 			if( n >= h ) {
@@ -259,27 +268,27 @@ static void inline _sort2( int *p1, int *p2 ) {
 }
 
 // --------------------------------------------------------------------
+static int _sort_and_clip( int *p_x1, int *p_x2, int width ) {
+
+	_sort2( p_x1, p_x2 );
+	if( *p_x1 >= width && *p_x2 < 0 ) {
+		return 0;
+	}
+	if( *p_x1 < 0 ) {
+		*p_x1 = 0;
+	}
+	if( *p_x2 >= width ) {
+		*p_x2 = width - 1;
+	}
+	return 1;
+}
+
+// --------------------------------------------------------------------
 void spk_fill_rect( SPK_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c ) {
 	int w, y, pos;
 
-	//	clipping
-	_sort2( &x1, &x2 );
-	_sort2( &y1, &y2 );
-	if( x1 >= p_image->width || x2 < 0 || y1 >= p_image->height || y2 < 0 ) {
-		return;
-	}
-	if( x1 < 0 ) {
-		x1 = 0;
-	}
-	if( y1 < 0 ) {
-		y1 = 0;
-	}
-	if( x2 >= p_image->width ) {
-		x2 = p_image->width - 1;
-	}
-	if( y2 >= p_image->height ) {
-		y2 = p_image->height - 1;
-	}
+	if( _sort_and_clip( &x1, &x2, p_image->width  ) ) return;
+	if( _sort_and_clip( &y1, &y2, p_image->height ) ) return;
 	//	drawing
 	w = x2 - x1 + 1;
 	pos = x1 + p_image->width * y1;
@@ -349,18 +358,45 @@ void spk_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2
 	p_dest		= p_dest_image->image + (dx1 + dy1 * p_dest_image->width);
 	p_src_st	= p_src;
 	p_dest_st	= p_dest;
-	for( y = sy1; y != sy2; y += vy ) {
+	for( y = sy1; ; y += vy ) {
 		p_src	= p_src_st;
 		p_dest	= p_dest_st;
-		for( x = sx1; x != sx2; x += vx ) {
+		for( x = sx1; ; x += vx ) {
 			d = *(p_src++);
 			if( d ) {
 				*p_dest = d;
 			}
 			p_dest++;
+			if( x == sx2 ) break;
 		}
 		p_src_st	+= p_src_image->width * vy;
 		p_dest_st	+= p_dest_image->width * vy;
+		if( y == sy2 ) break;
+	}
+}
+
+// --------------------------------------------------------------------
+void spk_stretch_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1, int dx2, int dy2 ) {
+	int x, y, vx, vy, sx, sy, sw, dw, sh, dh;
+
+	vx = (dx1 < dx2) ? 1 : -1;
+	vy = (dy1 < dy2) ? 1 : -1;
+	sw = sx2 - sx1 + 1;
+	if( sw == 0 ) sw = 1;
+	sh = sy2 - sy1 + 1;
+	if( sh == 0 ) sh = 1;
+	dw = dx2 - dx1 + 1;
+	if( dw == 0 ) dw = 1;
+	dh = dy2 - dy1 + 1;
+	if( dh == 0 ) dh = 1;
+	for( y = dy1; ; y += vy ) {
+		sy = (y - dy1) * sh / dh;
+		for( x = dx1; ; x += vx ) {
+			sx = (x - dx1) * sw / dw;
+			spk_set_pixel( p_dest_image, x, y, spk_get_pixel( p_src_image, sx, sy ) );
+			if( x == dx2 ) break;
+		}
+		if( y == dy2 ) break;
 	}
 }
 

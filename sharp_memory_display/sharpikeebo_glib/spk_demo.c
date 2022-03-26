@@ -39,6 +39,16 @@ static void demo( void ) {
 
 	p_screen = spk_get_display();
 
+	for( j = 0; j < 100; j++ ) {
+		spk_clear_buffer( p_screen, 0 );
+		x1 = j * 4;
+		y1 = j;
+		x2 = j * 16;
+		y2 = j * 3;
+		spk_stretch_copy( p_startup_logo, 0, 0, 399, 239, p_screen, x1, y1, x2, y2 );
+		spk_display( p_screen );
+	}
+
 	for( i = 0; i < USA_NUM; i++ ) {
 		usa_x[i] = (rand() % 400) << 8;
 		usa_y[i] = (rand() % 240) << 8;

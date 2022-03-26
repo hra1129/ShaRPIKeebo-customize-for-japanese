@@ -105,7 +105,7 @@ void spk_release_backbuffer( SPK_BACKBUFFER_T *p_image );
 void spk_clear_buffer( SPK_BACKBUFFER_T *p_image, uint8_t c );
 
 // --------------------------------------------------------------------
-//	spk_pixel()
+//	spk_set_pixel()
 //	input)
 //		p_image .... target backbuffer pointer
 //		x .......... X position
@@ -113,8 +113,23 @@ void spk_clear_buffer( SPK_BACKBUFFER_T *p_image, uint8_t c );
 //		c .......... pixel value
 //	output)
 //		none
+//	comment)
+//		If outside the back buffer is specified, it returns without doing anything.
 // --------------------------------------------------------------------
-void spk_pixel( SPK_BACKBUFFER_T *p_image, int x, int y, uint8_t c );
+void spk_set_pixel( SPK_BACKBUFFER_T *p_image, int x, int y, uint8_t c );
+
+// --------------------------------------------------------------------
+//	spk_get_pixel()
+//	input)
+//		p_image .... target backbuffer pointer
+//		x .......... X position
+//		y .......... Y position
+//	output)
+//		pixel value
+//	comment)
+//		If outside the back buffer is specified, 0 is returned.
+// --------------------------------------------------------------------
+uint8_t spk_get_pixel( SPK_BACKBUFFER_T *p_image, int x, int y );
 
 // --------------------------------------------------------------------
 //	spk_line()
@@ -159,6 +174,24 @@ void spk_fill_rect( SPK_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, u
 //		none
 // --------------------------------------------------------------------
 void spk_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1 );
+
+// --------------------------------------------------------------------
+//	spk_stretch_copy()
+//	input)
+//		p_src_image .... source backbuffer pointer
+//		sx1 ............ start X position on source
+//		sy1 ............ start Y position on source
+//		sx2 ............ end X position on source
+//		sy2 ............ end Y position on source
+//		p_dest_image ... destination backbuffer pointer
+//		dx1 ............ start X position on destination
+//		dy1 ............ start Y position on destination
+//		dx2 ............ end X position on destination
+//		dy2 ............ end Y position on destination
+//	output)
+//		none
+// --------------------------------------------------------------------
+void spk_stretch_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1, int dx2, int dy2 );
 
 // --------------------------------------------------------------------
 //	spk_led
