@@ -27,17 +27,53 @@
 #include <string.h>
 #include "sharpikeebo_glib.h"
 #include "startup_logo.h"
+#include "usa.h"
+
+#define USA_NUM		40
 
 // --------------------------------------------------------------------
 static void demo( void ) {
 	SPK_BACKBUFFER_T *p_screen;
 	int x1, y1, x2, y2, i, j;
+	int usa_x[USA_NUM], usa_y[USA_NUM], usa_vx[USA_NUM], usa_vy[USA_NUM];
 
 	p_screen = spk_get_display();
+
+	for( i = 0; i < USA_NUM; i++ ) {
+		usa_x[i] = (rand() % 400) << 8;
+		usa_y[i] = (rand() % 240) << 8;
+		usa_vx[i] = (rand() % 4097) - 2048;
+		usa_vy[i] = (rand() % 4097) - 2048;
+		if( (usa_vx[i] | usa_vy[i]) == 0 ) {
+			usa_vx[i] = 256;
+			usa_vy[i] = 256;
+		}
+	}
 
 	for( j = 0; j < 500; j++ ) {
 		spk_clear_buffer( p_screen, 0 );
 		spk_copy( p_startup_logo, 0, 0, 399, 239, p_screen, j - 400, 0 );
+		for( i = 0; i < USA_NUM; i++ ) {
+			usa_x[i] += usa_vx[i];
+			if( usa_vx[i] < 0 && usa_x[i] < 0 ) {
+				usa_x[i] = 0;
+				usa_vx[i] = -usa_vx[i];
+			}
+			else if( usa_vx[i] > 0 && usa_x[i] >= (400 << 8) ) {
+				usa_x[i] = 400 << 8;
+				usa_vx[i] = -usa_vx[i];
+			}
+			usa_y[i] += usa_vy[i];
+			if( usa_vy[i] < 0 && usa_y[i] < 0 ) {
+				usa_y[i] = 0;
+				usa_vy[i] = -usa_vy[i];
+			}
+			else if( usa_vy[i] > 0 && usa_y[i] >= (400 << 8) ) {
+				usa_y[i] = 400 << 8;
+				usa_vy[i] = -usa_vy[i];
+			}
+			spk_copy( p_usa, 0, 0, 63, 66, p_screen, usa_x[i] >> 8, usa_y[i] >> 8 );
+		}
 		spk_display( p_screen );
 	}
 

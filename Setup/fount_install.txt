@@ -1,0 +1,41 @@
+1. フォントをインストールする
+	/usr/share/fonts/ にフォントファイルをコピーする。
+	opentype, truetype の2つのフォルダがあるので、インストールするフォントの種類に
+	応じて適切なフォルダへコピーする。
+
+	例えば、下記で配布されているフォントなどをインストールできる。
+	https://github.com/googlefonts/morisawa-biz-ud-gothic
+
+2. インストールされているフォントの一覧を得る
+	$ fc-list
+
+	下記のようにインストールされているフォントの一覧が表示される。
+
+	/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf: DejaVu Serif:style=Bold
+	/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf: DejaVu Sans Mono:style=Book
+	/usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf: Noto Sans Mono:style=Regular
+	/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf: DejaVu Sans:style=Book
+	/usr/share/fonts/opentype/ipafont-mincho/ipam.ttf: IPA明朝,IPAMincho:style=Regular
+	/usr/share/fonts/truetype/takao-mincho/TakaoPMincho.ttf: Takao P明朝,TakaoPMincho:style=Regular
+	/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf: DejaVu Sans:style=Bold
+	/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf: IPA Pゴシック,IPAPGothic:style=Regular
+	/usr/share/fonts/truetype/fonts-japanese-gothic.ttf: Takao Pゴシック,TakaoPGothic:style=Regular
+	/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf: DejaVu Sans Mono:style=Bold
+	/usr/share/fonts/opentype/ipafont-mincho/ipamp.ttf: IPA P明朝,IPAPMincho:style=Regular
+	/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf: IPAゴシック,IPAGothic:style=Regular
+	/usr/share/fonts/truetype/morisawa/BIZUDPGothic-Regular.ttf: BIZ UDPGothic:style=Regular
+	/usr/share/fonts/truetype/morisawa/BIZUDPGothic-Bold.ttf: BIZ UDPGothic:style=Bold
+	/usr/share/fonts/truetype/fonts-japanese-mincho.ttf: Takao P明朝,TakaoPMincho:style=Regular
+	/usr/share/fonts/truetype/morisawa/BIZUDGothic-Bold.ttf: BIZ UDGothic:style=Bold
+	/usr/share/fonts/truetype/takao-gothic/TakaoPGothic.ttf: Takao Pゴシック,TakaoPGothic:style=Regular
+	/usr/share/fonts/truetype/noto/NotoSansMono-Bold.ttf: Noto Sans Mono:style=Bold
+	/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf: Noto Mono:style=Regular
+	/usr/share/fonts/truetype/takao-gothic/TakaoGothic.ttf: Takaoゴシック,TakaoGothic:style=Regular
+	/usr/share/fonts/truetype/takao-mincho/TakaoMincho.ttf: Takao明朝,TakaoMincho:style=Regular
+	/usr/share/fonts/truetype/morisawa/BIZUDGothic-Regular.ttf: BIZ UDGothic:style=Regular
+	/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf: DejaVu Serif:style=Book
+
+	.fbtermrc で指定する font-names の名前は、下記 ~~ の部分。
+
+	/usr/share/fonts/truetype/morisawa/BIZUDGothic-Regular.ttf: BIZ UDGothic:style=Regular
+	                                                            ~~~~~~~~~~~~
