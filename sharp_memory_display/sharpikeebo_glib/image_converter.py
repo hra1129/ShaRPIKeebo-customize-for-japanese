@@ -75,7 +75,7 @@ def main():
 	f.write( "#include \"sharpikeebo_glib.h\"\n" )
 	f.write( "\n" )
 	f.write( "extern const struct _BACKBUFFER_T _%s;\n" % sys.argv[2] )
-	f.write( "#define p_%s ((GLIB_BACKBUFFER_T*) &_%s)\n" % ( sys.argv[2], sys.argv[2] ) )
+	f.write( "#define p_%s ((SPK_BACKBUFFER_T*) &_%s)\n" % ( sys.argv[2], sys.argv[2] ) )
 	f.write( "\n" )
 	f.write( "#endif // __%s_H__\n" % sys.argv[2].upper() )
 	f.close()

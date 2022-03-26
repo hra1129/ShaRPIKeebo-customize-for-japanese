@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------
-// Sharpikeebo graphic library
+// Sharpikeebo game library
 // ====================================================================
 //	Copyright 2022 t.hara
 //
@@ -78,7 +78,7 @@ static const unsigned char mirror[256] = {
 };
 
 // --------------------------------------------------------------------
-int glib_initialize( void ) {
+int spk_initialize( void ) {
 	struct sembuf lock_operations;
 	key_t key;
 
@@ -119,15 +119,15 @@ int glib_initialize( void ) {
 	AIOWriteGPIO( EXTCOMIN	, 0 );
 	AIOWriteGPIO( CS		, 0 );
 
-	AIOWriteGPIO( LED0		, GLIB_LED_OFF );
-	AIOWriteGPIO( LED1		, GLIB_LED_OFF );
-	AIOWriteGPIO( LED2		, GLIB_LED_OFF );
-	AIOWriteGPIO( LED3		, GLIB_LED_OFF );
+	AIOWriteGPIO( LED0		, SPK_LED_OFF );
+	AIOWriteGPIO( LED1		, SPK_LED_OFF );
+	AIOWriteGPIO( LED2		, SPK_LED_OFF );
+	AIOWriteGPIO( LED3		, SPK_LED_OFF );
 	return 1;
 }
 
 // --------------------------------------------------------------------
-void glib_terminate( void ) {
+void spk_terminate( void ) {
 	struct sembuf unlock_operations;
 
 	if( sem_id != -1 ) {
@@ -139,14 +139,14 @@ void glib_terminate( void ) {
 }
 
 // --------------------------------------------------------------------
-void glib_display( const GLIB_BACKBUFFER_T *p_image ) {
+void spk_display( const SPK_BACKBUFFER_T *p_image ) {
 	static uint8_t frame_buffer[ 1 + 50 + 1 ];
 	int y, x, bit;
 	uint8_t d = 0;
 	const uint8_t *p;
 
 	if( p_image->width != 400 || p_image->height != 240 ) {
-		fprintf( stderr, "ERROR: The size of the back buffer passed to glib_display() must be 400x240.\n" );
+		fprintf( stderr, "ERROR: The size of the back buffer passed to spk_display() must be 400x240.\n" );
 		return;
 	}
 	//	convert to 1bpp from 8bpp.
@@ -171,12 +171,12 @@ void glib_display( const GLIB_BACKBUFFER_T *p_image ) {
 }
 
 // --------------------------------------------------------------------
-GLIB_BACKBUFFER_T *glib_get_backbuffer( uint32_t width, uint32_t height ) {
+SPK_BACKBUFFER_T *spk_get_backbuffer( uint32_t width, uint32_t height ) {
 	uint32_t size;
-	GLIB_BACKBUFFER_T *p;
+	SPK_BACKBUFFER_T *p;
 
 	size = width * height;
-	p = (GLIB_BACKBUFFER_T*) malloc( sizeof(GLIB_BACKBUFFER_T) + size - 1 );
+	p = (SPK_BACKBUFFER_T*) malloc( sizeof(SPK_BACKBUFFER_T) + size - 1 );
 	if( p != NULL ) {
 		p->width	= width;
 		p->height	= height;
@@ -186,24 +186,24 @@ GLIB_BACKBUFFER_T *glib_get_backbuffer( uint32_t width, uint32_t height ) {
 }
 
 // --------------------------------------------------------------------
-GLIB_BACKBUFFER_T *glib_get_display( void ) {
+SPK_BACKBUFFER_T *spk_get_display( void ) {
 
-	return glib_get_backbuffer( 400, 240 );
+	return spk_get_backbuffer( 400, 240 );
 }
 
 // --------------------------------------------------------------------
-void glib_release_backbuffer( GLIB_BACKBUFFER_T *p_image ) {
+void spk_release_backbuffer( SPK_BACKBUFFER_T *p_image ) {
 	free( p_image );
 }
 
 // --------------------------------------------------------------------
-void glib_clear_buffer( GLIB_BACKBUFFER_T *p_image, uint8_t c ) {
+void spk_clear_buffer( SPK_BACKBUFFER_T *p_image, uint8_t c ) {
 
 	memset( p_image->image, c, p_image->width * p_image->height );
 }
 
 // --------------------------------------------------------------------
-void glib_pixel( GLIB_BACKBUFFER_T *p_image, int x, int y, uint8_t c ) {
+void spk_pixel( SPK_BACKBUFFER_T *p_image, int x, int y, uint8_t c ) {
 
 	if( x < 0 || y < 0 || x >= p_image->width || y >= p_image->height ) {
 		return;
@@ -212,11 +212,11 @@ void glib_pixel( GLIB_BACKBUFFER_T *p_image, int x, int y, uint8_t c ) {
 }
 
 // --------------------------------------------------------------------
-void glib_line( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c ) {
+void spk_line( SPK_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c ) {
 	int w, h, vx, vy, n, i;
 
 	if( x1 == x2 && y1 == y2 ) {
-		glib_pixel( p_image, x1, y1, c );
+		spk_pixel( p_image, x1, y1, c );
 		return;
 	}
 	w = abs( x2 - x1 );
@@ -226,7 +226,7 @@ void glib_line( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint
 	n = 0;
 	if( w > h ) {
 		for( i = 0; i <= w; i++ ) {
-			glib_pixel( p_image, x1, y1, c );
+			spk_pixel( p_image, x1, y1, c );
 			x1 += vx;
 			n += h;
 			if( n >= w ) {
@@ -237,7 +237,7 @@ void glib_line( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint
 	}
 	else {
 		for( i = 0; i <= h; i++ ) {
-			glib_pixel( p_image, x1, y1, c );
+			spk_pixel( p_image, x1, y1, c );
 			y1 += vy;
 			n += w;
 			if( n >= h ) {
@@ -259,7 +259,7 @@ static void inline _sort2( int *p1, int *p2 ) {
 }
 
 // --------------------------------------------------------------------
-void glib_fill_rect( GLIB_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c ) {
+void spk_fill_rect( SPK_BACKBUFFER_T *p_image, int x1, int y1, int x2, int y2, uint8_t c ) {
 	int w, y, pos;
 
 	//	clipping
@@ -334,7 +334,7 @@ int _clip( int *p_sx1, int *p_sx2, int *p_dx1, int src_width, int dest_width ) {
 }
 
 // --------------------------------------------------------------------
-void glib_copy( GLIB_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, GLIB_BACKBUFFER_T *p_dest_image, int dx1, int dy1 ) {
+void spk_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1 ) {
 	int x, y, vx, vy;
 	uint8_t *p_src, *p_dest, d;
 	uint8_t *p_src_st, *p_dest_st;
@@ -365,13 +365,13 @@ void glib_copy( GLIB_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int s
 }
 
 // --------------------------------------------------------------------
-void glib_led( GLIB_LED_T led, GLIB_LED_ON_T led_on ) {
+void spk_led( SPK_LED_T led, SPK_LED_ON_T led_on ) {
 
 	AIOWriteGPIO( led_pin[ led & 3 ], led_on );
 }
 
 // --------------------------------------------------------------------
-unsigned int glib_get_key_state( void ) {
+unsigned int spk_get_key_state( void ) {
 	unsigned int result;
 
 	result = 

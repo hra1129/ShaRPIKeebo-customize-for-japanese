@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------
-// Sharpikeebo graphic library DEMO
+// Sharpikeebo game library DEMO
 // ====================================================================
 //	Copyright 2022 t.hara
 //
@@ -30,51 +30,51 @@
 
 // --------------------------------------------------------------------
 static void demo( void ) {
-	GLIB_BACKBUFFER_T *p_screen;
+	SPK_BACKBUFFER_T *p_screen;
 	int x1, y1, x2, y2, i, j;
 
-	p_screen = glib_get_display();
+	p_screen = spk_get_display();
 
 	for( j = 0; j < 500; j++ ) {
-		glib_clear_buffer( p_screen, 0 );
-		glib_copy( p_startup_logo, 0, 0, 399, 239, p_screen, j - 400, 0 );
-		glib_display( p_screen );
+		spk_clear_buffer( p_screen, 0 );
+		spk_copy( p_startup_logo, 0, 0, 399, 239, p_screen, j - 400, 0 );
+		spk_display( p_screen );
 	}
 
 	for( j = 0; j < 500; j++ ) {
-		glib_clear_buffer( p_screen, 0 );
+		spk_clear_buffer( p_screen, 0 );
 		for( i = 0; i < 50; i++ ) {
 			x1 = rand() % 400;
 			y1 = rand() % 240;
 			x2 = rand() % 400;
 			y2 = rand() % 240;
-			glib_line( p_screen, x1, y1, x2, y2, 255 );
+			spk_line( p_screen, x1, y1, x2, y2, 255 );
 		}
-		glib_display( p_screen );
+		spk_display( p_screen );
 	}
 
 	for( j = 0; j < 500; j++ ) {
-		glib_clear_buffer( p_screen, 0 );
+		spk_clear_buffer( p_screen, 0 );
 		for( i = 0; i < 50; i++ ) {
 			x1 = rand() % 400;
 			y1 = rand() % 240;
 			x2 = rand() % 400;
 			y2 = rand() % 240;
-			glib_fill_rect( p_screen, x1, y1, x2, y2, 255 );
+			spk_fill_rect( p_screen, x1, y1, x2, y2, 255 );
 		}
-		glib_display( p_screen );
+		spk_display( p_screen );
 	}
 }
 
 // --------------------------------------------------------------------
 int main( int argc, char *argv[] ) {
 
-	if( !glib_initialize() ) {
-		printf( "ERROR: Failed glib_initialize()\n" );
+	if( !spk_initialize() ) {
+		printf( "ERROR: Failed spk_initialize()\n" );
 		return 1;
 	}
 
 	demo();
-	glib_terminate();
+	spk_terminate();
 	return 0;
 }
