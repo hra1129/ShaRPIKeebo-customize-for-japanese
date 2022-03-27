@@ -28,31 +28,56 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <sys/stat.h>
+#include <pthread.h>
 #include <armbianio.h>
 #include "sharpikeebo_glib.h"
+
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+	// semun is defined into <sys/sem.h>. */
+#else
+union semun {
+	int val;					// value for SETVAL
+	struct semid_ds *buf;		// buffer for IPC_STAT, IPC_SET
+	unsigned short int *array;	// array for GETALL, SETALL
+	struct seminfo *__buf;		// buffer for IPC_INFO
+};
+#endif
+
+#define spk_width		400
+#define spk_height		240
 
 #define CS				16
 #define DISPON			18
 #define EXTCOMIN		22
 #define SPEED			4000000
 
-#define LED0			15		//	LEFT-UP
-#define LED1			37		//	RIGHT-UP
-#define LED2			35		//	LEFT-DOWN
-#define LED3			33		//	RIGHT-DOWN
+#define LED0			15				//	LEFT-UP
+#define LED1			37				//	RIGHT-UP
+#define LED2			35				//	LEFT-DOWN
+#define LED3			33				//	RIGHT-DOWN
 
-#define SW_LEFT			12		//	BUT1	SW102
-#define SW_BUTTON		32		//	BUT2	SW101
-#define SW_DOWN			36		//	BUT3	SW103
-#define SW_RIGHT		38		//	BUT4	SW104
-#define SW_UP			40		//	BUT5	SW105
+#define SW_LEFT			12				//	BUT1	SW102
+#define SW_BUTTON		32				//	BUT2	SW101
+#define SW_DOWN			36				//	BUT3	SW103
+#define SW_RIGHT		38				//	BUT4	SW104
+#define SW_UP			40				//	BUT5	SW105
 
-static int sem_id		= -1;
-static int hspi			= -1;
+static int sem_id				= -1;	//	for SharpMemoryDisplay lock semaphore
+static int hspi					= -1;
+static pthread_t h_draw_thread;
+
+static int update_sem_id		= -1;	//	for SharpMemoryDisplay update lock semaphore
+static int info_sem_id			= -1;
+static volatile int exit_request = 0;	//	0: normal, 1: exit request
+static SPK_BACKBUFFER_T *p_send_buffer;
 
 static const int led_pin[] = {
 	LED0, LED1, LED2, LED3
 };
+
+struct sembuf lock_operations;
+struct sembuf unlock_operations;
 
 // --------------------------------------------------------------------
 //	Table for inverting the sequence of bits
@@ -78,9 +103,53 @@ static const unsigned char mirror[256] = {
 };
 
 // --------------------------------------------------------------------
+static void *_draw_thread( void *p_arg ) {
+	static uint8_t frame_buffer[ 1 + (spk_width / 8) + 1 ];
+	int y, x, bit;
+	uint8_t d = 0;
+	const uint8_t *p;
+
+	for(;;) {
+		//	get semaphore (update request)
+		semop( update_sem_id, &lock_operations, 1 );
+		semop( info_sem_id, &lock_operations, 1 );
+		if( exit_request ) break;
+		//	convert to 1bpp from 8bpp.
+		AIOWriteGPIO( CS, 1 );
+		p = p_send_buffer->image;
+		frame_buffer[0] = 0x80;
+		AIOWriteSPI( hspi, frame_buffer, 1 );
+		for( y = 1; y <= spk_height; y++ ) {
+			frame_buffer[0] = mirror[ y ];
+			for( x = 1; x < 51; x++ ) {
+				for( bit = 0; bit < 8; bit++ ) {
+					d = (d << 1) + ((*p) < 128);
+					p++;
+				}
+				frame_buffer[x] = d;
+			}
+			frame_buffer[51] = 0;
+			AIOWriteSPI( hspi, frame_buffer, 1 + 50 + 1 );
+		}
+		//	transfer
+		AIOWriteGPIO( CS, 0 );
+		semop( info_sem_id, &unlock_operations, 1 );
+	}
+	semop( info_sem_id, &unlock_operations, 1 );
+	pthread_exit( NULL );
+}
+
+// --------------------------------------------------------------------
 int spk_initialize( void ) {
-	struct sembuf lock_operations;
 	key_t key;
+	union semun sem_arg;
+
+	lock_operations.sem_num = 0;
+	lock_operations.sem_op = -1;
+	lock_operations.sem_flg = SEM_UNDO;
+	unlock_operations.sem_num = 0;
+	unlock_operations.sem_op = 1;
+	unlock_operations.sem_flg = SEM_UNDO;
 
 	AIOInitBoard( "Raspberry Pi" );
 
@@ -107,13 +176,26 @@ int spk_initialize( void ) {
 
 	key = ftok( "/usr/local/bin/sharpikeebo_lcd", 1 );
 
-	lock_operations.sem_num = 0;
-	lock_operations.sem_op = -1;
-	lock_operations.sem_flg = SEM_UNDO;
 	sem_id = semget( key, 1, 0666 );
 	if( sem_id != -1 ) {
 		semop( sem_id, &lock_operations, 1 );
 	}
+
+	update_sem_id = semget( IPC_PRIVATE, 1, S_IRUSR | S_IWUSR );
+	if( update_sem_id == -1 ) {
+		printf( "%d\n", __LINE__ );
+		return 0;
+	}
+    sem_arg.val = 0;	//	locked
+    semctl( update_sem_id, 0, SETVAL, sem_arg );
+
+	info_sem_id = semget( IPC_PRIVATE, 1, S_IRUSR | S_IWUSR );
+	if( info_sem_id == -1 ) {
+		printf( "%d\n", __LINE__ );
+		return 0;
+	}
+    sem_arg.val = 1;	//	unlocked
+    semctl( info_sem_id, 0, SETVAL, sem_arg );
 
 	AIOWriteGPIO( DISPON	, 1 );
 	AIOWriteGPIO( EXTCOMIN	, 0 );
@@ -123,51 +205,38 @@ int spk_initialize( void ) {
 	AIOWriteGPIO( LED1		, SPK_LED_OFF );
 	AIOWriteGPIO( LED2		, SPK_LED_OFF );
 	AIOWriteGPIO( LED3		, SPK_LED_OFF );
+
+	p_send_buffer = spk_get_backbuffer( spk_width, spk_height );
+	if( p_send_buffer == NULL ) {
+		printf( "%d\n", __LINE__ );
+		return 0;
+	}
+	pthread_create( &h_draw_thread, NULL, _draw_thread, NULL );
 	return 1;
 }
 
 // --------------------------------------------------------------------
 void spk_terminate( void ) {
-	struct sembuf unlock_operations;
+	void *p_result;
 
+	exit_request = 1;
+	semop( update_sem_id, &lock_operations, 1 );
+	pthread_join( h_draw_thread, &p_result );
 	if( sem_id != -1 ) {
-		unlock_operations.sem_num = 0;
-		unlock_operations.sem_op = 1;
-		unlock_operations.sem_flg = SEM_UNDO;
 		semop( sem_id, &unlock_operations, 1 );
 	}
 }
 
 // --------------------------------------------------------------------
 void spk_display( const SPK_BACKBUFFER_T *p_image ) {
-	static uint8_t frame_buffer[ 1 + 50 + 1 ];
-	int y, x, bit;
-	uint8_t d = 0;
-	const uint8_t *p;
 
-	if( p_image->width != 400 || p_image->height != 240 ) {
-		fprintf( stderr, "ERROR: The size of the back buffer passed to spk_display() must be 400x240.\n" );
+	if( p_image->width != spk_width || p_image->height != spk_height ) {
 		return;
 	}
-	//	convert to 1bpp from 8bpp.
-	AIOWriteGPIO( CS, 1 );
-	p = p_image->image;
-	frame_buffer[0] = 0x80;
-	AIOWriteSPI( hspi, frame_buffer, 1 );
-	for( y = 1; y < 241; y++ ) {
-		frame_buffer[0] = mirror[ y ];
-		for( x = 1; x < 51; x++ ) {
-			for( bit = 0; bit < 8; bit++ ) {
-				d = (d << 1) + ((*p) < 128);
-				p++;
-			}
-			frame_buffer[x] = d;
-		}
-		frame_buffer[51] = 0;
-		AIOWriteSPI( hspi, frame_buffer, 1 + 50 + 1 );
-	}
-	//	transfer
-	AIOWriteGPIO( CS, 0 );
+	semop( info_sem_id, &lock_operations, 1 );
+	memcpy( p_send_buffer->image, p_image->image, spk_width * spk_height );
+	semop( info_sem_id, &unlock_operations, 1 );
+	semop( update_sem_id, &unlock_operations, 1 );
 }
 
 // --------------------------------------------------------------------
@@ -188,7 +257,7 @@ SPK_BACKBUFFER_T *spk_get_backbuffer( uint32_t width, uint32_t height ) {
 // --------------------------------------------------------------------
 SPK_BACKBUFFER_T *spk_get_display( void ) {
 
-	return spk_get_backbuffer( 400, 240 );
+	return spk_get_backbuffer( spk_width, spk_height );
 }
 
 // --------------------------------------------------------------------
@@ -377,26 +446,34 @@ void spk_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2
 
 // --------------------------------------------------------------------
 void spk_stretch_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1, int dx2, int dy2 ) {
-	int x, y, vx, vy, sx, sy, sw, dw, sh, dh;
+	int x, y, vx, vy, sx, sy, sw, dw, sh, dh, dx1d, dx2d, dy1d, dy2d;
+	uint8_t d;
 
+	if( (dx1 < 0) && (dx2 < 0) ) return;
+	if( (dy1 < 0) && (dy2 < 0) ) return;
+	if( (dx1 >= p_dest_image->width)  && (dx2 >= p_dest_image->width)  ) return;
+	if( (dy1 >= p_dest_image->height) && (dy2 >= p_dest_image->height) ) return;
 	vx = (dx1 < dx2) ? 1 : -1;
 	vy = (dy1 < dy2) ? 1 : -1;
-	sw = sx2 - sx1 + 1;
-	if( sw == 0 ) sw = 1;
-	sh = sy2 - sy1 + 1;
-	if( sh == 0 ) sh = 1;
-	dw = dx2 - dx1 + 1;
-	if( dw == 0 ) dw = 1;
-	dh = dy2 - dy1 + 1;
-	if( dh == 0 ) dh = 1;
-	for( y = dy1; ; y += vy ) {
-		sy = (y - dy1) * sh / dh;
-		for( x = dx1; ; x += vx ) {
-			sx = (x - dx1) * sw / dw;
-			spk_set_pixel( p_dest_image, x, y, spk_get_pixel( p_src_image, sx, sy ) );
-			if( x == dx2 ) break;
+	sw = abs(sx2 - sx1) + 1;
+	sh = abs(sy2 - sy1) + 1;
+	dw = abs(dx2 - dx1) + 1;
+	dh = abs(dy2 - dy1) + 1;
+	dx1d = (dx1 < 0) ? 0 : (dx1 >= p_dest_image->width ) ? p_dest_image->width  - 1: dx1;
+	dx2d = (dx2 < 0) ? 0 : (dx2 >= p_dest_image->width ) ? p_dest_image->width  - 1: dx2;
+	dy1d = (dy1 < 0) ? 0 : (dy1 >= p_dest_image->height) ? p_dest_image->height - 1: dy1;
+	dy2d = (dy2 < 0) ? 0 : (dy2 >= p_dest_image->height) ? p_dest_image->height - 1: dy2;
+	for( y = dy1d; ; y += vy ) {
+		sy = (y - dy1) * sh / dh + sy1;
+		for( x = dx1d; ; x += vx ) {
+			sx = (x - dx1) * sw / dw + sx1;
+			d = spk_get_pixel( p_src_image, sx, sy );
+			if( d ) {
+				spk_set_pixel( p_dest_image, x, y, d );
+			}
+			if( x == dx2d ) break;
 		}
-		if( y == dy2 ) break;
+		if( y == dy2d ) break;
 	}
 }
 

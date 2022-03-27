@@ -41,7 +41,7 @@ static void demo( void ) {
 
 	for( j = 0; j < 100; j++ ) {
 		spk_clear_buffer( p_screen, 0 );
-		x1 = j * 4;
+		x1 = (j - 50) * 4;
 		y1 = j;
 		x2 = j * 16;
 		y2 = j * 3;
