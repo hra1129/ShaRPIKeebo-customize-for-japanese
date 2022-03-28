@@ -149,12 +149,16 @@ static void main_process( int sem_id, uint32_t *p_capture, unsigned char *p_bitm
 		semop( sem_id, &lock_operations, 1 );
 		fbc_capture( p_capture );
 		zoom_mode();
-		spk_led( SPK_LED_LU + c, SPK_LED_ON );
+		if( c == 0 ) {
+			spk_led( SPK_LED_LU, SPK_LED_ON );
+		}
 		smdd_convert_image( p_capture, p_bitmap, c, zoom_x, zoom_y, zoom_level );
-		spk_led( SPK_LED_LU + c, SPK_LED_OFF );
+		if( c == 0 ) {
+			spk_led( SPK_LED_LU, SPK_LED_OFF );
+		}
 		smdd_transfer_bitmap( p_bitmap );
 		semop( sem_id, &unlock_operations, 1 );
-		c = 1 - c;
+		c = (c + 1) & 7;
 	}
 }
 
@@ -215,7 +219,6 @@ int main( int argc, char *argv[] ) {
 	free( p_bitmap );
 	free( p_capture );
 	spk_led( SPK_LED_LU, SPK_LED_ON );
-	spk_led( SPK_LED_RU, SPK_LED_ON );
 	smdd_terminate();
 	spk_terminate();
 	fbc_terminate();
