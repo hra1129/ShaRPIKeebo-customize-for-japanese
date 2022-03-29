@@ -94,14 +94,6 @@ To show all installed unit files use 'systemctl list-unit-files'.
 
 	root=PARTUUID=c79fb013-02 rootfstype=ext4 fsck.repair=yes ipv6.disable=1 rootwait logo.nologo quiet
 
-	シリアル通信関連のサービスも停止する。
-	Serial communication related services will also be suspended.
-
-	$ sudo systemctl disable hciuart
-
-	※getty@tty1 は、止めてはならない。止めてしまうと、ターミナルが出てこなくなる。
-	getty@tty1 must not be stopped. If you stop it, the terminal will not appear.
-
 5. 起動にかかった時間をサービス毎に確認する ( Check the time taken for each service to start up. )
 	$ systemd-analyze plot > unitstart.html
 
