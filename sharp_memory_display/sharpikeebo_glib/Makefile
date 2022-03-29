@@ -1,6 +1,6 @@
 CFLAGS=-c -Wall -O2 -DSPI_BUS_NUMBER=0
 LIBS = -pthread -larmbianio
-all: spk_demo game_demo
+all: spk_demo game_demo rotate_demo
 
 spk_demo: sharpikeebo_glib.o spk_demo.o startup_logo.o usa.o
 	$(CC) sharpikeebo_glib.o spk_demo.o startup_logo.o usa.o $(LIBS) -o spk_demo
@@ -23,6 +23,7 @@ startup_logo.h : startup_logo.png image_converter.py
 usa.h : usa.png image_converter.py
 	./image_converter.py usa.png usa
 
+
 game_demo: sharpikeebo_glib.o game_demo.o game.o
 	$(CC) sharpikeebo_glib.o game_demo.o game.o $(LIBS) -o game_demo
 
@@ -35,5 +36,12 @@ game.o : game.c game.h
 game.h : game.png image_converter.py
 	./image_converter.py game.png game
 
+
+rotate_demo: sharpikeebo_glib.o rotate_demo.o startup_logo.o
+	$(CC) sharpikeebo_glib.o rotate_demo.o startup_logo.o -lm $(LIBS) -o rotate_demo
+
+rotate_demo.o: sharpikeebo_glib.c sharpikeebo_glib.h rotate_demo.c startup_logo.h
+	$(CC) $(CFLAGS) rotate_demo.c
+
 clean:
-	rm -rf *.o spk_demo
+	rm -rf *.o spk_demo game_demo rotate_demo
