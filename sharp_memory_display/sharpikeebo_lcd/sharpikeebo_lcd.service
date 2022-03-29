@@ -1,7 +1,7 @@
 [Unit]
 Description=sharpikeebo_lcd
-Requires=basic.target pigpiod.service
-After=basic.target pigpiod.service
+Requires=pigpiod.service
+After=pigpiod.service
 
 [Service]
 ExecStart=/usr/local/bin/sharpikeebo_lcd -noblink -invert --

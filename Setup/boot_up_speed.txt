@@ -1,0 +1,109 @@
+起動時間の短縮設定
+Shorten startup time setting
+-------------------------------------------------------------------------------
+
+1. 自動起動するサービスを調べる ( Find out which services start automatically. )
+	$ systemctl list-units --type=service
+
+  UNIT                                                        LOAD   ACTIVE SUB     DESCRIPTION
+  alsa-restore.service                                        loaded active exited  Save/Restore Sound Card State
+  avahi-daemon.service                                        loaded active running Avahi mDNS/DNS-SD Stack
+  bluetooth.service                                           loaded active running Bluetooth service
+  bthelper@hci0.service                                       loaded active exited  Raspberry Pi bluetooth helper
+  console-setup.service                                       loaded active exited  Set console font and keymap
+  cron.service                                                loaded active running Regular background program processing daemon
+  dbus.service                                                loaded active running D-Bus System Message Bus
+  dhcpcd.service                                              loaded active running DHCP Client Daemon
+  dphys-swapfile.service                                      loaded active exited  dphys-swapfile - set up, mount/unmount, and>
+  fake-hwclock.service                                        loaded active exited  Restore / save the current clock
+  getty@tty1.service                                          loaded active running Getty on tty1
+  hciuart.service                                             loaded active running Configure Bluetooth Modems connected by UART
+  ifupdown-pre.service                                        loaded active exited  Helper to synchronize boot up for ifupdown
+  keyboard-setup.service                                      loaded active exited  Set the console keyboard layout
+  kmod-static-nodes.service                                   loaded active exited  Create list of static device nodes for the >
+  networking.service                                          loaded active exited  Raise network interfaces
+  nmbd.service                                                loaded active running Samba NMB Daemon
+  pigpiod.service                                             loaded active running Daemon required to control GPIO pins via pi>
+  polkit.service                                              loaded active running Authorization Manager
+  raspi-config.service                                        loaded active exited  LSB: Switch to ondemand cpu governor (unles>
+  rc-local.service                                            loaded active exited  /etc/rc.local Compatibility
+  rng-tools-debian.service                                    loaded active running LSB: rng-tools (Debian variant)
+  rpi-eeprom-update.service                                   loaded active exited  Check for Raspberry Pi EEPROM updates
+  rsyslog.service                                             loaded active running System Logging Service
+  rtkit-daemon.service                                        loaded active running RealtimeKit Scheduling Policy Service
+  sharpikeebo_lcd.service                                     loaded active running sharpikeebo_lcd
+  smbd.service                                                loaded active running Samba SMB Daemon
+  ssh.service                                                 loaded active running OpenBSD Secure Shell server
+  systemd-fsck-root.service                                   loaded active exited  File System Check on Root Device
+  systemd-fsck@dev-disk-by\x2dpartuuid-c79fb013\x2d01.service loaded active exited  File System Check on /dev/disk/by-partuuid/>
+  systemd-journal-flush.service                               loaded active exited  Flush Journal to Persistent Storage
+  systemd-journald.service                                    loaded active running Journal Service
+  systemd-logind.service                                      loaded active running User Login Management
+  systemd-modules-load.service                                loaded active exited  Load Kernel Modules
+  systemd-random-seed.service                                 loaded active exited  Load/Save Random Seed
+  systemd-remount-fs.service                                  loaded active exited  Remount Root and Kernel File Systems
+  systemd-sysctl.service                                      loaded active exited  Apply Kernel Variables
+  systemd-sysusers.service                                    loaded active exited  Create System Users
+  systemd-timesyncd.service                                   loaded active running Network Time Synchronization
+  systemd-tmpfiles-setup-dev.service                          loaded active exited  Create Static Device Nodes in /dev
+  systemd-tmpfiles-setup.service                              loaded active exited  Create Volatile Files and Directories
+  systemd-udev-trigger.service                                loaded active exited  Coldplug All udev Devices
+  systemd-udevd.service                                       loaded active running Rule-based Manager for Device Events and Fi>
+  systemd-update-utmp.service                                 loaded active exited  Update UTMP about System Boot/Shutdown
+  systemd-user-sessions.service                               loaded active exited  Permit User Sessions
+  triggerhappy.service                                        loaded active running triggerhappy global hotkey daemon
+  user-runtime-dir@1000.service                               loaded active exited  User Runtime Directory /run/user/1000
+  user@1000.service                                           loaded active running User Manager for UID 1000
+  wpa_supplicant.service                                      loaded active running WPA supplicant
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+49 loaded units listed. Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+2. この中から不要なものを止める ( Stop unnecessary things from this. )
+	不要なもの
+		triggerhappy .... キーボードショートカット設定
+
+	$ sudo systemctl disable triggerhappy.service
+	Synchronizing state of triggerhappy.service with SysV service script with /lib/systemd/systemd-sysv-install.
+	Executing: /lib/systemd/systemd-sysv-install disable triggerhappy
+	Removed /etc/systemd/system/multi-user.target.wants/triggerhappy.service.
+
+3. DHCPサービスのタイムアウトを短くする ( Shorten DHCP service timeout. )
+	sudo nano /etc/systemd/system/dhcpcd.service.d/wait.conf
+
+	dhcpcd のオプションに -t 5 を追加する。
+	Add -t 5 to the dhcpcd options.
+
+	[Service]
+	ExecStart=
+	ExecStart=/usr/sbin/dhcpcd -w -q -t 5
+
+4. cmdline.txt を編集する ( Edit cmdline.txt )
+	$ sudo nano /boot/cmdline.txt
+
+	末尾に "quiet" を追加して、起動時のメッセージを非表示にする。
+	Add "quiet" at the end to hide the startup message.
+
+	console=serial0,115200 console=tty1 root=PARTUUID=c79fb013-02 rootfstype=ext4 fsck.repair=yes ipv6.disable=1 rootwait logo.nologo quiet
+
+	さらに、シリアル通信を止めてしまう。
+	Furthermore, it stops serial communication.
+
+	root=PARTUUID=c79fb013-02 rootfstype=ext4 fsck.repair=yes ipv6.disable=1 rootwait logo.nologo quiet
+
+	シリアル通信関連のサービスも停止する。
+	Serial communication related services will also be suspended.
+
+	$ sudo systemctl disable hciuart
+
+	※getty@tty1 は、止めてはならない。止めてしまうと、ターミナルが出てこなくなる。
+	getty@tty1 must not be stopped. If you stop it, the terminal will not appear.
+
+5. 起動にかかった時間をサービス毎に確認する ( Check the time taken for each service to start up. )
+	$ systemd-analyze plot > unitstart.html
+
+	"./unistart.html" にグラフが出力されるので、それを見て確認する。
+	"./unistart.html" to see the graph output.
