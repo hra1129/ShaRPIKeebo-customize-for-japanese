@@ -478,6 +478,45 @@ void spk_stretch_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2,
 }
 
 // --------------------------------------------------------------------
+static int inline _linear( int sx1, int sx2, int dx, int dxs, int dw ) {
+
+	return (sx2 - sx1) * (dx - dxs) / dw + sx1;
+}
+
+// --------------------------------------------------------------------
+void spk_rotate_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, int sx3, int sy3, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1, int dx2, int dy2 ) {
+	int sx4, sy4, sx1y, sy1y, sx2y, sy2y, sx, sy, x, y, vx, vy, dw, dh, dx1d, dx2d, dy1d, dy2d;
+	uint8_t d;
+
+	vx = (dx1 < dx2) ? 1 : -1;
+	vy = (dy1 < dy2) ? 1 : -1;
+	dw = abs(dx2 - dx1) + 1;
+	dh = abs(dy2 - dy1) + 1;
+	dx1d = (dx1 < 0) ? 0 : (dx1 >= p_dest_image->width ) ? p_dest_image->width  - 1: dx1;
+	dx2d = (dx2 < 0) ? 0 : (dx2 >= p_dest_image->width ) ? p_dest_image->width  - 1: dx2;
+	dy1d = (dy1 < 0) ? 0 : (dy1 >= p_dest_image->height) ? p_dest_image->height - 1: dy1;
+	dy2d = (dy2 < 0) ? 0 : (dy2 >= p_dest_image->height) ? p_dest_image->height - 1: dy2;
+	sx4 = sx3 + sx2 - sx1;
+	sy4 = sy3 + sy2 - sy1;
+	for( y = dy1d; ; y += vy ) {
+		sx1y = _linear( sx1, sx3, y, dy1, dh );
+		sy1y = _linear( sy1, sy3, y, dy1, dh );
+		sx2y = _linear( sx2, sx4, y, dy1, dh );
+		sy2y = _linear( sy2, sy4, y, dy1, dh );
+		for( x = dx1d; ; x += vx ) {
+			sx = _linear( sx1y, sx2y, x, dx1, dw );
+			sy = _linear( sy1y, sy2y, x, dx1, dw );
+			d = spk_get_pixel( p_src_image, sx, sy );
+			if( d ) {
+				spk_set_pixel( p_dest_image, x, y, d );
+			}
+			if( x == dx2d ) break;
+		}
+		if( y == dy2d ) break;
+	}
+}
+
+// --------------------------------------------------------------------
 void spk_led( SPK_LED_T led, SPK_LED_ON_T led_on ) {
 
 	AIOWriteGPIO( led_pin[ led & 3 ], led_on );

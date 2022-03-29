@@ -194,6 +194,26 @@ void spk_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2
 void spk_stretch_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1, int dx2, int dy2 );
 
 // --------------------------------------------------------------------
+//	spk_rotate_copy()
+//	input)
+//		p_src_image .... source backbuffer pointer
+//		sx1 ............ X1 position on source
+//		sy1 ............ Y1 position on source
+//		sx2 ............ X2 position on source
+//		sy2 ............ Y2 position on source
+//		sx3 ............ X3 position on source
+//		sy3 ............ Y3 position on source
+//		p_dest_image ... destination backbuffer pointer
+//		dx1 ............ start X position on destination
+//		dy1 ............ start Y position on destination
+//		dx2 ............ end X position on destination
+//		dy2 ............ end Y position on destination
+//	output)
+//		none
+// --------------------------------------------------------------------
+void spk_rotate_copy( SPK_BACKBUFFER_T *p_src_image, int sx1, int sy1, int sx2, int sy2, int sx3, int sy3, SPK_BACKBUFFER_T *p_dest_image, int dx1, int dy1, int dx2, int dy2 );
+
+// --------------------------------------------------------------------
 //	spk_led
 //	input)
 //		led ...... 0: Left-up, 1: Right-up, 2: Left-down, 3: Right-down
