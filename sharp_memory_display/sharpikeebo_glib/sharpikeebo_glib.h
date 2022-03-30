@@ -22,8 +22,8 @@
 //	DEALINGS IN THE SOFTWARE.
 // --------------------------------------------------------------------
 
-#ifndef __SHARPIKEEBO_SPK_H__
-#define __SHARPIKEEBO_SPK_H__
+#ifndef __SHARPIKEEBO_GLIB_H__
+#define __SHARPIKEEBO_GLIB_H__
 
 #include <stdint.h>
 
