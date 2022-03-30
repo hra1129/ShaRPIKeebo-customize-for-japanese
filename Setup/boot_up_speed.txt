@@ -99,3 +99,20 @@ To show all installed unit files use 'systemctl list-unit-files'.
 
 	"./unistart.html" にグラフが出力されるので、それを見て確認する。
 	"./unistart.html" to see the graph output.
+
+6. kernelロードまでのディレイを 0 にする ( Delay to kernel load is set to 0. )
+	$ sudo nano /boot/config.txt
+
+	末尾に下記を追記する。
+	Add the following at the end.
+
+	boot_delay=0
+
+7. 未使用のデバイスのデバイスファイルを生成しないようにする ( Do not generate device files for unused devices. )
+	$ sudo nano /etc/udev/rules.d/99-com.rules
+
+	i2c-dev をコメントアウトする。
+	Comment out i2c-dev.
+
+	#SUBSYSTEM=="i2c-dev", GROUP="i2c", MODE="0660"
+
