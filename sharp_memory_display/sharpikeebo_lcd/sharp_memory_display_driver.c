@@ -40,9 +40,9 @@ static int				hspi		= -1;
 #define DISPON			18
 #define EXTCOMIN		22
 
-#define SPEED			4000000
+#define SPEED			3500000
 
-// --------------------------------------------------------------------
+// --------------------------------------------s------------------------
 //	Table for inverting the sequence of bits
 //	{ b7, b6, ... , b0 } --> { b0, b1, ... , b7 }
 //

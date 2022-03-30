@@ -50,7 +50,7 @@ union semun {
 #define CS				16
 #define DISPON			18
 #define EXTCOMIN		22
-#define SPEED			4000000
+#define SPEED			3500000
 
 #define LED0			15				//	LEFT-UP
 #define LED1			37				//	RIGHT-UP

@@ -1,47 +1,47 @@
-CFLAGS=-c -Wall -O2 -DSPI_BUS_NUMBER=0
+CFLAGS=-c -Wall -O2 -DSPI_BUS_NUMBER=0 -I.
 LIBS = -pthread -larmbianio
 all: spk_demo game_demo rotate_demo
 
-spk_demo: sharpikeebo_glib.o spk_demo.o startup_logo.o usa.o
-	$(CC) sharpikeebo_glib.o spk_demo.o startup_logo.o usa.o $(LIBS) -o spk_demo
+spk_demo: sharpikeebo_glib.o sample/spk_demo.o sample/startup_logo.o sample/usa.o
+	$(CC) sharpikeebo_glib.o sample/spk_demo.o sample/startup_logo.o sample/usa.o $(LIBS) -o spk_demo
 
-spk_demo.o: sharpikeebo_glib.c sharpikeebo_glib.h spk_demo.c startup_logo.h usa.h
-	$(CC) $(CFLAGS) spk_demo.c
+spk_demo.o: sharpikeebo_glib.c sharpikeebo_glib.h sample/spk_demo.c sample/startup_logo.h sample/usa.h
+	$(CC) $(CFLAGS) sample/spk_demo.c -o sample/spk_demo.o
 
 sharpikeebo_glib.o: sharpikeebo_glib.c sharpikeebo_glib.h
-	$(CC) $(CFLAGS) sharpikeebo_glib.c
+	$(CC) $(CFLAGS) sharpikeebo_glib.c -o sharpikeebo_glib.o
 
-startup_logo.o : startup_logo.c startup_logo.h
-	$(CC) $(CFLAGS) startup_logo.c
+sample/startup_logo.o : sample/startup_logo.c sample/startup_logo.h
+	$(CC) $(CFLAGS) sample/startup_logo.c -o sample/startup_logo.o
 
-usa.o : usa.c usa.h
-	$(CC) $(CFLAGS) usa.c
+sample/usa.o : sample/usa.c sample/usa.h
+	$(CC) $(CFLAGS) sample/usa.c -o sample/usa.o
 
-startup_logo.h : startup_logo.png image_converter.py
-	./image_converter.py startup_logo.png startup_logo
+sample/startup_logo.h : sample/startup_logo.png image_converter.py
+	./image_converter.py sample/startup_logo.png sample/startup_logo
 
-usa.h : usa.png image_converter.py
-	./image_converter.py usa.png usa
-
-
-game_demo: sharpikeebo_glib.o game_demo.o game.o
-	$(CC) sharpikeebo_glib.o game_demo.o game.o $(LIBS) -o game_demo
-
-game_demo.o: sharpikeebo_glib.c sharpikeebo_glib.h game_demo.c game.h
-	$(CC) $(CFLAGS) game_demo.c
-
-game.o : game.c game.h
-	$(CC) $(CFLAGS) game.c
-
-game.h : game.png image_converter.py
-	./image_converter.py game.png game
+sample/usa.h : sample/usa.png image_converter.py
+	./image_converter.py sample/usa.png sample/usa
 
 
-rotate_demo: sharpikeebo_glib.o rotate_demo.o startup_logo.o
-	$(CC) sharpikeebo_glib.o rotate_demo.o startup_logo.o -lm $(LIBS) -o rotate_demo
+game_demo: sharpikeebo_glib.o sample/game_demo.o sample/game.o
+	$(CC) sharpikeebo_glib.o sample/game_demo.o sample/game.o $(LIBS) -o sample/game_demo
 
-rotate_demo.o: sharpikeebo_glib.c sharpikeebo_glib.h rotate_demo.c startup_logo.h
-	$(CC) $(CFLAGS) rotate_demo.c
+sample/game_demo.o: sharpikeebo_glib.c sharpikeebo_glib.h sample/game_demo.c sample/game.h
+	$(CC) $(CFLAGS) sample/game_demo.c -o sample/game_demo.o
+
+sample/game.o : sample/game.c sample/game.h
+	$(CC) $(CFLAGS) sample/game.c -o sample/game.o
+
+sample/game.h : sample/game.png image_converter.py
+	./image_converter.py sample/game.png sample/game
+
+
+rotate_demo: sharpikeebo_glib.o sample/rotate_demo.o sample/startup_logo.o
+	$(CC) sharpikeebo_glib.o sample/rotate_demo.o sample/startup_logo.o -lm $(LIBS) -o rotate_demo
+
+sample/rotate_demo.o: sharpikeebo_glib.c sharpikeebo_glib.h sample/rotate_demo.c sample/startup_logo.h
+	$(CC) $(CFLAGS) sample/rotate_demo.c -o sample/rotate_demo.o
 
 clean:
-	rm -rf *.o spk_demo game_demo rotate_demo
+	rm -rf *.o sample/*.o spk_demo game_demo rotate_demo

@@ -5,7 +5,7 @@
 #ifndef __USA_H__
 #define __USA_H__
 
-#include "sharpikeebo_glib.h"
+#include <sharpikeebo_glib.h>
 
 extern const struct _BACKBUFFER_T _usa;
 #define p_usa ((SPK_BACKBUFFER_T*) &_usa)

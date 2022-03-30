@@ -34,29 +34,40 @@ static void rotate_matrix( int *p_x, int *p_y, int x, int y, double c, double s 
 
 	x -= 200;
 	y -= 120;
-	*p_x = (int)(x * c + y * s) + 200;
-	*p_y = (int)(x * s - y * c) + 120;
+	*p_x = (int)(x * c - y * s) + 200;
+	*p_y = (int)(x * s + y * c) + 120;
+}
+
+// --------------------------------------------------------------------
+static void rotate( SPK_BACKBUFFER_T *p_screen, int deg, double zoom ) {
+	int sx1, sx2, sx3, sy1, sy2, sy3;
+	double rad, s, c;
+
+	rad = deg * (2. * M_PI) / 256.;
+	c = cos( rad ) * zoom;
+	s = sin( rad ) * zoom;
+	rotate_matrix( &sx1, &sy1,   0,   0, c, s );
+	rotate_matrix( &sx2, &sy2, 399,   0, c, s );
+	rotate_matrix( &sx3, &sy3,   0, 239, c, s );
+	spk_rotate_copy( p_startup_logo, sx1, sy1, sx2, sy2, sx3, sy3, p_screen, 0, 0, 399, 239 );
+	spk_display( p_screen );
 }
 
 // --------------------------------------------------------------------
 static void demo( void ) {
 	SPK_BACKBUFFER_T *p_screen;
-	int sx1, sx2, sx3, sy1, sy2, sy3, deg;
-	double rad, s, c;
+	int deg, zoom;
 
 	p_screen = spk_get_display();
 
-	deg = 0;
 	for(;;) {
-		deg = (deg + 1) & 255;
-		rad = deg * (2. * M_PI) / 256.;
-		c = cos( rad );
-		s = sin( rad );
-		rotate_matrix( &sx1, &sy1,   0,   0, c, s );
-		rotate_matrix( &sx2, &sy2, 399,   0, c, s );
-		rotate_matrix( &sx3, &sy3,   0, 239, c, s );
-		spk_rotate_copy( p_startup_logo, sx1, sy1, sx2, sy2, sx3, sy3, p_screen, 0, 0, 399, 239 );
-		spk_display( p_screen );
+		for( deg = 0; deg < 256; deg++ ) {
+			rotate( p_screen, deg & 255, 1. );
+		}
+		for( zoom = 0; zoom < 256; zoom++ ) {
+			deg = (deg + 1) & 255;
+			rotate( p_screen, deg & 255, cos( zoom * M_PI / 64. ) * 2. );;
+		}
 	}
 }
 

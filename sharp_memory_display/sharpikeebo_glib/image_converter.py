@@ -43,7 +43,7 @@ def main():
 	f.write( "\tuint8_t\t\timage[%d];\n" % ( width * height ) )
 	f.write( "} _BACKBUFFER_T;\n" )
 	f.write( "\n" )
-	f.write( "const _BACKBUFFER_T _%s = {\n" % sys.argv[2] )
+	f.write( "const _BACKBUFFER_T _%s = {\n" % s_name )
 	f.write( "\t%d, %d, {\n" % ( width, height ) )
 	f.write( "\t\t" )
 	for y in range( 0, height ):
@@ -69,18 +69,18 @@ def main():
 	f.write( "//  Graphic data: [%s]\n" % a_path[-1] )
 	f.write( "// --------------------------------------------------------------------\n" )
 	f.write( "\n" )
-	f.write( "#ifndef __%s_H__\n" % sys.argv[2].upper() )
-	f.write( "#define __%s_H__\n" % sys.argv[2].upper() )
+	f.write( "#ifndef __%s_H__\n" % s_name.upper() )
+	f.write( "#define __%s_H__\n" % s_name.upper() )
 	f.write( "\n" )
-	f.write( "#include \"sharpikeebo_glib.h\"\n" )
+	f.write( "#include <sharpikeebo_glib.h>\n" )
 	f.write( "\n" )
-	f.write( "extern const struct _BACKBUFFER_T _%s;\n" % sys.argv[2] )
-	f.write( "#define p_%s ((SPK_BACKBUFFER_T*) &_%s)\n" % ( sys.argv[2], sys.argv[2] ) )
+	f.write( "extern const struct _BACKBUFFER_T _%s;\n" % s_name )
+	f.write( "#define p_%s ((SPK_BACKBUFFER_T*) &_%s)\n" % ( s_name, s_name ) )
 	f.write( "\n" )
-	f.write( "#endif // __%s_H__\n" % sys.argv[2].upper() )
+	f.write( "#endif // __%s_H__\n" % s_name.upper() )
 	f.close()
 
-	print( "Generated %s.c and %s.h" % ( sys.argv[2], sys.argv[2] ) )
+	print( "Generated %s.c and %s.h" % ( s_name, s_name ) )
 
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
