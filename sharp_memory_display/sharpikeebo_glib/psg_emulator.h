@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------
-// Sharpikeebo game library
+// PSG emulator
 // ====================================================================
 //	Copyright 2022 t.hara
 //
@@ -21,65 +21,61 @@
 //	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 //	DEALINGS IN THE SOFTWARE.
 // --------------------------------------------------------------------
-//	Require:
-//		sudo apt-get install libpulse-dev
-//		compile options: -lpulse -lpulse-simple
 
-#ifndef __SHARPIKEEBO_SLIB_H__
-#define __SHARPIKEEBO_SLIB_H__
+#ifndef __PSG_EMULATOR_H__
+#define __PSG_EMULATOR_H__
 
-#include <psg_emulator.h>
-#include <scc_emulator.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// --------------------------------------------------------------------
-//	spk_sound_initialize
-//	input)
-//		none
-//	output)
-//		0 ...... Failed (Sound device is not found.)
-//		!0 ..... Success
-// --------------------------------------------------------------------
-int spk_sound_initialize( void );
+typedef void *H_PSG_T;
 
 // --------------------------------------------------------------------
-//	spk_sound_terminate
+//	psg_initialize
 //	input)
 //		none
 //	output)
-//		none
+//		0 ...... Failed (Not enough memory.)
+//		!0 ..... H_PSG_T instance.
 // --------------------------------------------------------------------
-void spk_sound_terminate( void );
+H_PSG_T psg_initialize( void );
 
 // --------------------------------------------------------------------
-//	spk_get_psg_handle
+//	psg_terminate
 //	input)
-//		none
+//		hpsg ... H_PSG_T instance
 //	output)
-//		PSG handle
+//		none
 // --------------------------------------------------------------------
-H_PSG_T spk_get_psg_handle( void );
+void psg_terminate( H_PSG_T hpsg );
 
 // --------------------------------------------------------------------
-//	spk_get_psg_se_handle
+//	psg_generate_wave
 //	input)
-//		none
+//		hpsg ......... H_PSG_T instance
+//		pwave ........ Wave memory address
+//		samples ...... Samples of Wave memory
 //	output)
-//		PSG handle
+//		none
+//	comment)
+//		An 8-bit signed monaural signal is written to pwave.
+//		samples indicates the size of the pwave and is equal to the number of BYTEs.
 // --------------------------------------------------------------------
-H_PSG_T spk_get_psg_se_handle( void );
+void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples );
 
 // --------------------------------------------------------------------
-//	spk_get_scc_handle
+//	psg_write_register
 //	input)
-//		none
+//		hpsg ......... H_PSG_T instance
+//		address ...... PSG register address
+//		data ......... Write data
 //	output)
-//		SCC handle
+//		none
 // --------------------------------------------------------------------
-H_SCC_T spk_get_scc_handle( void );
+void psg_write_register( H_PSG_T hpsg, uint8_t address, uint8_t data );
 
 #ifdef __cplusplus
 }

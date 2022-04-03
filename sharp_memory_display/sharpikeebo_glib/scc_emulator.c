@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------
-// Sharpikeebo game library
+// SCC emulator
 // ====================================================================
 //	Copyright 2022 t.hara
 //
@@ -21,68 +21,39 @@
 //	ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 //	DEALINGS IN THE SOFTWARE.
 // --------------------------------------------------------------------
-//	Require:
-//		sudo apt-get install libpulse-dev
-//		compile options: -lpulse -lpulse-simple
 
-#ifndef __SHARPIKEEBO_SLIB_H__
-#define __SHARPIKEEBO_SLIB_H__
-
-#include <psg_emulator.h>
+#include <malloc.h>
+#include <string.h>
+#include <stdint.h>
 #include <scc_emulator.h>
 
-#ifdef __cplusplus
-extern "C" {
+typedef struct {
+	uint32_t	clock;
+} SCC_T;
+
+#ifndef SAMPLE_RATE
+#define SAMPLE_RATE		48000		//	Hz
+#endif
+
+#ifndef PSG_CLOCK
+#define PSG_CLOCK		3579545		//	Hz
 #endif
 
 // --------------------------------------------------------------------
-//	spk_sound_initialize
-//	input)
-//		none
-//	output)
-//		0 ...... Failed (Sound device is not found.)
-//		!0 ..... Success
-// --------------------------------------------------------------------
-int spk_sound_initialize( void );
+H_SCC_T scc_initialize( void ) {
+	SCC_T *pscc;
 
-// --------------------------------------------------------------------
-//	spk_sound_terminate
-//	input)
-//		none
-//	output)
-//		none
-// --------------------------------------------------------------------
-void spk_sound_terminate( void );
+	pscc = (SCC_T*) malloc( sizeof(SCC_T) );
+	if( pscc == NULL ) {
+		return NULL;
+	}
 
-// --------------------------------------------------------------------
-//	spk_get_psg_handle
-//	input)
-//		none
-//	output)
-//		PSG handle
-// --------------------------------------------------------------------
-H_PSG_T spk_get_psg_handle( void );
-
-// --------------------------------------------------------------------
-//	spk_get_psg_se_handle
-//	input)
-//		none
-//	output)
-//		PSG handle
-// --------------------------------------------------------------------
-H_PSG_T spk_get_psg_se_handle( void );
-
-// --------------------------------------------------------------------
-//	spk_get_scc_handle
-//	input)
-//		none
-//	output)
-//		SCC handle
-// --------------------------------------------------------------------
-H_SCC_T spk_get_scc_handle( void );
-
-#ifdef __cplusplus
+	memset( pscc, 0, sizeof(SCC_T) );
+	return (H_SCC_T) pscc;
 }
-#endif
 
-#endif
+// --------------------------------------------------------------------
+void scc_terminate( H_SCC_T hscc ) {
+
+	free( hscc );
+}

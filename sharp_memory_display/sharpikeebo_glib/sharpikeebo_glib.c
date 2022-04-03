@@ -76,8 +76,8 @@ static const int led_pin[] = {
 	LED0, LED1, LED2, LED3
 };
 
-struct sembuf lock_operations;
-struct sembuf unlock_operations;
+static struct sembuf lock_operations;
+static struct sembuf unlock_operations;
 
 // --------------------------------------------------------------------
 //	Table for inverting the sequence of bits
@@ -183,7 +183,6 @@ int spk_initialize( void ) {
 
 	update_sem_id = semget( IPC_PRIVATE, 1, S_IRUSR | S_IWUSR );
 	if( update_sem_id == -1 ) {
-		printf( "%d\n", __LINE__ );
 		return 0;
 	}
     sem_arg.val = 0;	//	locked
@@ -191,7 +190,6 @@ int spk_initialize( void ) {
 
 	info_sem_id = semget( IPC_PRIVATE, 1, S_IRUSR | S_IWUSR );
 	if( info_sem_id == -1 ) {
-		printf( "%d\n", __LINE__ );
 		return 0;
 	}
     sem_arg.val = 1;	//	unlocked
@@ -208,7 +206,6 @@ int spk_initialize( void ) {
 
 	p_send_buffer = spk_get_backbuffer( spk_width, spk_height );
 	if( p_send_buffer == NULL ) {
-		printf( "%d\n", __LINE__ );
 		return 0;
 	}
 	pthread_create( &h_draw_thread, NULL, _draw_thread, NULL );

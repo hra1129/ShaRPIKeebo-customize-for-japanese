@@ -25,7 +25,7 @@
 			ファイルの最後に下記を追加して保存する。
 			alias fbterm='env LANG=ja_JP.UTF8 fbterm uim-fep'
 			export TERM=fbterm
-			fbterm
+			sudo fbterm
 
 	2.2. CLI のエディタ ne, ファイラー fd をインストールする
 		$ sudo apt-get install ne fdclone
