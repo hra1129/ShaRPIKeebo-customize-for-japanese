@@ -53,7 +53,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );
 	psg_write_register( hpsg, 1, 4 );
 	psg_write_register( hpsg, 8, 15 );
-	sleep( 1 );
+	sleep( 3 );
 
 	spk_sound_terminate();
 	return 0;

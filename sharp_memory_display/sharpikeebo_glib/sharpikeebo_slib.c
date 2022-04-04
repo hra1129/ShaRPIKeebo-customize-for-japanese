@@ -29,6 +29,7 @@
 #include <sys/sem.h>
 #include <sys/stat.h>
 #include <pthread.h>
+#include <unistd.h>
 
 //	pulseaudio
 #include <pulse/error.h>
@@ -53,8 +54,9 @@ union semun {
 #endif
 
 #define SAMPLE_CHANNELS	2
-#define SAMPLE_UNIT		( SAMPLE_RATE / 20 )
+#define SAMPLE_UNIT		( SAMPLE_RATE / 2 )
 #define SAMPLE_SIZE		( SAMPLE_UNIT * SAMPLE_CHANNELS )
+#define SAMPLE_BUFFER	( SAMPLE_RATE * SAMPLE_CHANNELS * 2 )
 
 // --------------------------------------------------------------------
 static int update_sem_id		= -1;	//	for SharpMemoryDisplay update lock semaphore
@@ -101,7 +103,7 @@ static void *_wave_thread( void *p_arg ) {
 	int result, pa_error;
 
 	for(;;) {
-		semop( update_sem_id, &lock_operations, 1 );
+		//semop( update_sem_id, &lock_operations, 1 );
 		if( exit_request ) break;
 		_sound_generator( wave );
 		result = pa_simple_write( pa, wave, sizeof(wave), &pa_error );
@@ -119,7 +121,7 @@ static void *_timer_thread( void *p_arg ) {		// ÅöébíË
 	for(;;) {
 		semop( update_sem_id, &unlock_operations, 1 );
 		if( exit_request ) break;
-//		usleep( 5 * 1000 - 1000 );
+		usleep( 50 * 1000 - 100 );
 	}
 	return NULL;
 }
@@ -130,6 +132,7 @@ int spk_sound_initialize( void ) {
 	int pa_error;
 	pa_sample_spec ss;
 	union semun sem_arg;
+	pa_buffer_attr buf_attr;
 
 	hpsg	= psg_initialize();
 	hpsg_se	= psg_initialize();
@@ -152,10 +155,15 @@ int spk_sound_initialize( void ) {
     sem_arg.val = 1;	//	unlocked
     semctl( update_sem_id, 0, SETVAL, sem_arg );
 
-	ss.format		= PA_SAMPLE_S16LE;
-	ss.rate			= SAMPLE_RATE;
-	ss.channels		= SAMPLE_CHANNELS;
-	pa = pa_simple_new(NULL, "sharpikeebo_slib", PA_STREAM_PLAYBACK, NULL, "sharpikeebo_slib", &ss, NULL, NULL, &pa_error);
+	ss.format			= PA_SAMPLE_S16LE;
+	ss.rate				= SAMPLE_RATE;
+	ss.channels			= SAMPLE_CHANNELS;
+
+	buf_attr.minreq		= SAMPLE_SIZE * sizeof(int16_t);
+	buf_attr.maxlength	= SAMPLE_BUFFER;
+	buf_attr.prebuf		= buf_attr.minreq;
+	buf_attr.tlength	= buf_attr.minreq;
+	pa = pa_simple_new(NULL, "sharpikeebo_slib", PA_STREAM_PLAYBACK, NULL, "sharpikeebo_slib", &ss, NULL, &buf_attr, &pa_error);
 	if (pa == NULL) {
 		return 0;
 	}

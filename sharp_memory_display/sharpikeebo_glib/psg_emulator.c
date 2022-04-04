@@ -41,6 +41,7 @@ typedef struct {
 	int			envelope_state;
 	int			tone;
 	int			envelope;
+	int			last_level;
 } PSG_1CH_T;
 
 typedef struct {
@@ -99,14 +100,16 @@ void psg_terminate( H_PSG_T hpsg ) {
 static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 	int index;
 
-	if( (ppsg->clock_div32 & 15) == 0 ) {
-		if( pch->counter == 0 ) {
-			pch->counter	= pch->periodic_register;
-			pch->tone		= 1 - pch->tone;
-		}
-		else {
-			pch->counter--;
-		}
+	if( (ppsg->clock_div32 & 15) != 0 ) {
+		return pch->last_level;
+	}
+
+	if( pch->counter == 0 ) {
+		pch->counter	= pch->periodic_register;
+		pch->tone		= 1 - pch->tone;
+	}
+	else {
+		pch->counter--;
 	}
 
 	if( ppsg->clock_div32 == 0 ) {
@@ -138,15 +141,18 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 	}
 
 	if( (!pch->tone_enable || !pch->tone) && (!pch->noise_enable || !noise) ) {
-		return 0;
-	}
-	if( pch->envelope_enable ) {
-		index = pch->envelope;
+		pch->last_level = 0;
 	}
 	else {
-		index = pch->volume;
+		if( pch->envelope_enable ) {
+			index = pch->envelope;
+		}
+		else {
+			index = pch->volume;
+		}
+		pch->last_level = volume_table[ index ];
 	}
-	return volume_table[ index ];
+	return pch->last_level;
 }
 
 // --------------------------------------------------------------------
@@ -170,13 +176,12 @@ void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples ) {
 	int i, j, ch0, ch1, ch2, noise, next_clock, level;
 	PSG_T *ppsg = (PSG_T*) hpsg;
 
-	j = ppsg->clock;
 	for( i = 0; i < samples; i++ ) {
-		ppsg->samples++;
 		next_clock = ppsg->samples * PSG_CLOCK / SAMPLE_RATE;
+		ppsg->samples++;
 
 		level = 0;
-		for( ; j < next_clock; j++ ) {
+		for( j = ppsg->clock; j < next_clock; j++ ) {
 			//	1clock
 			ppsg->clock_div32 = (ppsg->clock_div32 + 1) & 31;
 			noise	= _noise_generator( ppsg );
@@ -187,11 +192,11 @@ void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples ) {
 		}
 		pwave[i] = (int8_t)( level / (next_clock - ppsg->clock) );
 		ppsg->clock = next_clock;
-	}
 
-	if( ppsg->clock >= PSG_CLOCK ) {
-		ppsg->clock		-= PSG_CLOCK;
-		ppsg->samples	-= SAMPLE_RATE;
+		if( ppsg->samples >= SAMPLE_RATE ) {
+			ppsg->clock		-= PSG_CLOCK;
+			ppsg->samples	-= SAMPLE_RATE;
+		}
 	}
 }
 
