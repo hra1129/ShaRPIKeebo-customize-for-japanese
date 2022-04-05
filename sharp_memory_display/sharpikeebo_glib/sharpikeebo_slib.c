@@ -22,117 +22,138 @@
 //	DEALINGS IN THE SOFTWARE.
 // --------------------------------------------------------------------
 
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <sys/stat.h>
-#include <pthread.h>
 #include <unistd.h>
+#include <pthread.h>
 
 //	pulseaudio
 #include <pulse/error.h>
-#include <pulse/simple.h>
+#include <pulse/pulseaudio.h>
+#include <pulse/mainloop.h>
 
 #include <psg_emulator.h>
 #include <scc_emulator.h>
-
-#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
-	// semun is defined into <sys/sem.h>. */
-#else
-union semun {
-	int val;					// value for SETVAL
-	struct semid_ds *buf;		// buffer for IPC_STAT, IPC_SET
-	unsigned short int *array;	// array for GETALL, SETALL
-	struct seminfo *__buf;		// buffer for IPC_INFO
-};
-#endif
 
 #ifndef SAMPLE_RATE
 #define SAMPLE_RATE		48000		//	Hz
 #endif
 
 #define SAMPLE_CHANNELS	2
-#define SAMPLE_UNIT		( SAMPLE_RATE / 2 )
-#define SAMPLE_SIZE		( SAMPLE_UNIT * SAMPLE_CHANNELS )
-#define SAMPLE_BUFFER	( SAMPLE_RATE * SAMPLE_CHANNELS * 2 )
 
 // --------------------------------------------------------------------
-static int update_sem_id		= -1;	//	for SharpMemoryDisplay update lock semaphore
+static pa_context *pa_ctx;
+static pa_mainloop *pa_ml;
+static pa_buffer_attr buf_attr;
+static int underflows = 0;
+static pa_sample_spec ss;
+
 static pthread_t h_wave_thread;
-static pthread_t h_timer_thread;		//	ÅöébíË 
-static pa_simple *pa;
-static volatile int exit_request = 0;
-static struct sembuf lock_operations;
-static struct sembuf unlock_operations;
 
 static H_PSG_T hpsg;
 static H_PSG_T hpsg_se;
 static H_SCC_T hscc;
 
+static int16_t wave[ SAMPLE_RATE * SAMPLE_CHANNELS ];
+static int latency = 800000;		// start latency in micro seconds
+static int sample_offset = 0;
+
 // --------------------------------------------------------------------
-static void _sound_generator( int16_t *p_wave ) {
-	static uint8_t wave[ SAMPLE_UNIT ];
+static void _sound_generator( int16_t *p_wave, int samples ) {
+	static uint8_t wave[ SAMPLE_RATE ];
 	int i;
 
-	memset( p_wave, 0, SAMPLE_SIZE * sizeof(int16_t) );
-
-	psg_generate_wave( hpsg, wave, SAMPLE_UNIT );
-	for( i = 0; i < SAMPLE_UNIT; i++ ) {
+	psg_generate_wave( hpsg, wave, samples );
+	for( i = 0; i < samples; i++ ) {
 		p_wave[ (i << 1) + 0 ] = (int)wave[ i ] * 32;
 		p_wave[ (i << 1) + 1 ] = (int)wave[ i ] * 32;
 	}
 
-	psg_generate_wave( hpsg_se, wave, SAMPLE_UNIT );
-	for( i = 0; i < SAMPLE_UNIT; i++ ) {
+	psg_generate_wave( hpsg_se, wave, samples );
+	for( i = 0; i < samples; i++ ) {
 		p_wave[ (i << 1) + 0 ] += (int)wave[ i ] * 32;
 		p_wave[ (i << 1) + 1 ] += (int)wave[ i ] * 32;
 	}
 
-//	scc_generate_wave( hscc, wave, SAMPLE_UNIT );
-//	for( i = 0; i < SAMPLE_UNIT; i++ ) {
+//	scc_generate_wave( hscc, wave, samples );
+//	for( i = 0; i < samples; i++ ) {
 //		p_wave[ (i << 1) + 0 ] = (int)wave[ i ] * 32;
 //		p_wave[ (i << 1) + 1 ] = (int)wave[ i ] * 32;
 //	}
 }
 
 // --------------------------------------------------------------------
-static void *_wave_thread( void *p_arg ) {
-	int16_t wave[ SAMPLE_SIZE ];
-	int result, pa_error;
+static void *_wave_thread( void *p_no_use ) {
 
-	for(;;) {
-		//semop( update_sem_id, &lock_operations, 1 );
-		if( exit_request ) break;
-		_sound_generator( wave );
-		result = pa_simple_write( pa, wave, sizeof(wave), &pa_error );
-		if( result < 0 ) {
-			pa_simple_free( pa );
-			return NULL;
-		}
-	}
-	pa_simple_free( pa );
+	pa_mainloop_run( pa_ml, NULL );
 	return NULL;
 }
 
 // --------------------------------------------------------------------
-static void *_timer_thread( void *p_arg ) {		// ÅöébíË 
-	for(;;) {
-		semop( update_sem_id, &unlock_operations, 1 );
-		if( exit_request ) break;
-		usleep( 50 * 1000 - 100 );
+static void stream_request_cb( pa_stream *s, size_t byte_length, void *p_no_use ) {
+	//pa_usec_t usec;
+	//int neg;
+	int samples;
+
+	byte_length &= ~3;
+	if( byte_length > sizeof(wave) ) {
+		byte_length = sizeof(wave);
 	}
-	return NULL;
+	samples = byte_length >> 2;
+	//pa_stream_get_latency( s, &usec, &neg );
+	if( (sample_offset + (samples << 1)) > (sizeof(wave) >> 1) ) {
+		sample_offset = 0;
+	}
+	_sound_generator( wave + sample_offset, samples );
+	pa_stream_write( s, wave + sample_offset, samples << 2, NULL, 0LL, PA_SEEK_RELATIVE );
+	sample_offset += samples << 1;
+}
+
+// --------------------------------------------------------------------
+static void stream_underflow_cb(pa_stream *s, void *userdata) {
+	// We increase the latency by 50% if we get 6 underflows and latency is under 2s
+	// This is very useful for over the network playback that can't handle low latencies
+	underflows++;
+	if( underflows >= 6 && latency < 2000000 ) {
+		latency = (latency * 3) / 2;
+		buf_attr.maxlength = pa_usec_to_bytes( latency, &ss );
+		buf_attr.tlength = pa_usec_to_bytes( latency, &ss );  
+		pa_stream_set_buffer_attr( s, &buf_attr, NULL, NULL );
+		underflows = 0;
+	}
+}
+
+// --------------------------------------------------------------------
+void pa_state_cb( pa_context *c, void *userdata ) {
+	pa_context_state_t state;
+	int *pa_ready = userdata;
+
+	state = pa_context_get_state(c);
+	switch  (state) {
+	// These are just here for reference
+	case PA_CONTEXT_UNCONNECTED:
+	case PA_CONTEXT_CONNECTING:
+	case PA_CONTEXT_AUTHORIZING:
+	case PA_CONTEXT_SETTING_NAME:
+	default:
+		break;
+	case PA_CONTEXT_FAILED:
+	case PA_CONTEXT_TERMINATED:
+		*pa_ready = 2;
+		break;
+	case PA_CONTEXT_READY:
+		*pa_ready = 1;
+		break;
+	}
 }
 
 // --------------------------------------------------------------------
 int spk_sound_initialize( void ) {
-	uint16_t wave[ SAMPLE_SIZE ];
-	int pa_error;
-	pa_sample_spec ss;
-	union semun sem_arg;
-	pa_buffer_attr buf_attr;
+	pa_mainloop_api *pa_mlapi;
+	pa_stream *playstream;
+	int pa_ready = 0;
+	int r;
 
 	hpsg	= psg_initialize();
 	hpsg_se	= psg_initialize();
@@ -141,38 +162,50 @@ int spk_sound_initialize( void ) {
 		return 0;
 	}
 
-	lock_operations.sem_num = 0;
-	lock_operations.sem_op = -1;
-	lock_operations.sem_flg = SEM_UNDO;
-	unlock_operations.sem_num = 0;
-	unlock_operations.sem_op = 1;
-	unlock_operations.sem_flg = SEM_UNDO;
+	pa_ml		= pa_mainloop_new();
+	pa_mlapi	= pa_mainloop_get_api( pa_ml );
+	pa_ctx		= pa_context_new(pa_mlapi, "sharpikeebo_slib");
+	pa_context_connect( pa_ctx, NULL, 0, NULL );
 
-	update_sem_id = semget( IPC_PRIVATE, 1, S_IRUSR | S_IWUSR );
-	if( update_sem_id == -1 ) {
+	pa_context_set_state_callback( pa_ctx, pa_state_cb, &pa_ready );
+	while (pa_ready == 0) {
+		pa_mainloop_iterate( pa_ml, 1, NULL );
+	}
+	if( pa_ready == 2 ) {
+		//	case of PA_CONTEXT_FAILED or PA_CONTEXT_TERMINATED
 		return 0;
 	}
-    sem_arg.val = 1;	//	unlocked
-    semctl( update_sem_id, 0, SETVAL, sem_arg );
-
+	//	case of PA_CONTEXT_READY
 	ss.format			= PA_SAMPLE_S16LE;
 	ss.rate				= SAMPLE_RATE;
 	ss.channels			= SAMPLE_CHANNELS;
+	playstream = pa_stream_new( pa_ctx, "sharpikeebo_slib Playback", &ss, NULL );
+	if( playstream == NULL ) {
+		return 0;
+	}
+	pa_stream_set_write_callback( playstream, stream_request_cb, NULL );
+	pa_stream_set_underflow_callback( playstream, stream_underflow_cb, NULL );
 
-	buf_attr.minreq		= SAMPLE_SIZE * sizeof(int16_t);
-	buf_attr.maxlength	= SAMPLE_BUFFER;
-	buf_attr.prebuf		= buf_attr.minreq;
-	buf_attr.tlength	= buf_attr.minreq;
-	pa = pa_simple_new(NULL, "sharpikeebo_slib", PA_STREAM_PLAYBACK, NULL, "sharpikeebo_slib", &ss, NULL, &buf_attr, &pa_error);
-	if (pa == NULL) {
+	buf_attr.fragsize	= (uint32_t) -1;
+	buf_attr.maxlength	= pa_usec_to_bytes( latency, &ss);
+	buf_attr.minreq		= pa_usec_to_bytes( 0, &ss );
+	buf_attr.prebuf		= (uint32_t) -1;
+	buf_attr.tlength	= pa_usec_to_bytes( latency, &ss );
+	r = pa_stream_connect_playback( playstream, NULL, &buf_attr,
+			PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY,
+			NULL, NULL );
+	if( r < 0 ) {
+		//	å√Ç¢ PulseAudio ÇÕ PA_STREAM_ADJUST_LATENCY Ç™Ç†ÇÈÇ∆Ç§Ç‹Ç≠Ç¢Ç©Ç»Ç¢èÍçáÇ™Ç†ÇÈÇÃÇ≈ÅAäOÇµÇƒÉäÉgÉâÉC.
+		//	Old PulseAudio may not work with PA_STREAM_ADJUST_LATENCY, remove it and retry.
+		r = pa_stream_connect_playback(playstream, NULL, &buf_attr,
+			PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE, 
+			NULL, NULL );
+	}
+	if( r < 0 ) {
 		return 0;
 	}
 
-	memset( wave, 0, sizeof(wave) );
-	pa_simple_write( pa, wave, sizeof(wave), &pa_error );
-
 	pthread_create( &h_wave_thread, NULL, _wave_thread, NULL );
-	pthread_create( &h_timer_thread, NULL, _timer_thread, NULL );	//	ÅöébíË 
 	return 1;
 }
 
@@ -180,10 +213,12 @@ int spk_sound_initialize( void ) {
 void spk_sound_terminate( void ) {
 	void *p_result;
 
-	exit_request = 1;
-	semop( update_sem_id, &lock_operations, 1 );
+	pa_mainloop_quit( pa_ml, 0 );
 	pthread_join( h_wave_thread, &p_result );
-	pthread_join( h_timer_thread, &p_result );
+
+	pa_context_disconnect( pa_ctx );
+	pa_context_unref( pa_ctx );
+	pa_mainloop_free( pa_ml );
 
 	scc_terminate( hscc );
 	psg_terminate( hpsg_se );
