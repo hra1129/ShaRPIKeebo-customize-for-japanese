@@ -115,32 +115,48 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 	if( ppsg->clock_div32 == 0 ) {
 		if( pch->envelope_counter == 0 ) {
 			pch->envelope_counter = pch->envelope_period;
+
+			if( pch->envelope_state != 0 ) {
+				if( (BIT(pch->envelope_state, 4) == 1) || (BIT(pch->envelope_type, ENVELOPE_HOLD) == 0 && BIT(pch->envelope_type, ENVELOPE_CONT) == 1) ) {
+					pch->envelope_state = (pch->envelope_state - 1) & 31;
+				}
+			}
+			else {
+				if( BIT(pch->envelope_type, ENVELOPE_CONT) == 0 ) {
+					pch->envelope = 0;
+					pch->envelope_state = 0;
+				}
+				else {
+					pch->envelope_state = 31;
+				}
+			}
+
+			if( BIT(pch->envelope_state, 4) == 0 && BIT(pch->envelope_type, ENVELOPE_CONT) == 0 ) {
+				pch->envelope = 0;
+			}
+			else if( BIT(pch->envelope_state, 4) == 1 || (BIT(pch->envelope_type, ENVELOPE_ALTER) ^ BIT(pch->envelope_type, ENVELOPE_HOLD)) == 0 ) {
+				if( BIT(pch->envelope_state, ENVELOPE_ATTACK) == 1 ) {
+					pch->envelope = (pch->envelope_state & 15) ^ 15;
+				}
+				else {
+					pch->envelope = (pch->envelope_state & 15);
+				}
+			}
+			else {
+				if( BIT(pch->envelope_state, ENVELOPE_ATTACK) == 1 ) {
+					pch->envelope = (pch->envelope_state & 15);
+				}
+				else {
+					pch->envelope = (pch->envelope_state & 15) ^ 15;
+				}
+			}
 		}
 		else {
 			pch->envelope_counter--;
 		}
-		if( BIT(pch->envelope_state, 4) == 0 && BIT(pch->envelope_type, ENVELOPE_CONT) == 0 ) {
-			pch->envelope = 0;
-		}
-		else if( BIT(pch->envelope_state, 4) == 1 || (BIT(pch->envelope_type, ENVELOPE_ALTER) ^ BIT(pch->envelope_type, ENVELOPE_HOLD)) == 0 ) {
-			if( BIT(pch->envelope_state, ENVELOPE_ATTACK) == 1 ) {
-				pch->envelope = pch->envelope_state ^ 15;
-			}
-			else {
-				pch->envelope = pch->envelope_state;
-			}
-		}
-		else {
-			if( BIT(pch->envelope_state, ENVELOPE_ATTACK) == 1 ) {
-				pch->envelope = pch->envelope_state;
-			}
-			else {
-				pch->envelope = pch->envelope_state ^ 15;
-			}
-		}
 	}
 
-	if( (!pch->tone_enable || !pch->tone) && (!pch->noise_enable || !noise) ) {
+	if( !( (!pch->tone_enable || !pch->tone) && (!pch->noise_enable || noise) ) ) {
 		pch->last_level = 0;
 	}
 	else {
@@ -251,11 +267,14 @@ void psg_write_register( H_PSG_T hpsg, uint8_t address, uint8_t data ) {
 		break;
 	case 13:
 		ppsg->channel[0].envelope_type		= data;
-		ppsg->channel[0].envelope_state		= 15;
+		ppsg->channel[0].envelope_state		= 31;
+		ppsg->channel[0].envelope_counter	= ppsg->channel[0].envelope_period;
 		ppsg->channel[1].envelope_type		= data;
-		ppsg->channel[1].envelope_state		= 15;
+		ppsg->channel[1].envelope_state		= 31;
+		ppsg->channel[1].envelope_counter	= ppsg->channel[1].envelope_period;
 		ppsg->channel[2].envelope_type		= data;
-		ppsg->channel[2].envelope_state		= 15;
+		ppsg->channel[2].envelope_state		= 31;
+		ppsg->channel[2].envelope_counter	= ppsg->channel[2].envelope_period;
 		break;
 	default:
 		break;

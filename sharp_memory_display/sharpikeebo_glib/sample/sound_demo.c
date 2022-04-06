@@ -30,11 +30,13 @@
 
 int main( int argc, char *argv[] ) {
 	H_PSG_T hpsg;
+	int i;
 	
 	spk_sound_initialize();
 	hpsg = spk_get_psg_handle();
 
 	psg_write_register( hpsg, 7, 0b10111110 );
+
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 8, 15 );		//	volume
@@ -58,7 +60,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 0 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -66,7 +68,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 2 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 20 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 0 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -74,7 +76,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 4 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -82,7 +84,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 8 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -90,7 +92,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 10 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -98,7 +100,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 11 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -106,7 +108,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 12 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -114,7 +116,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 13 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -122,7 +124,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 14 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
@@ -130,11 +132,22 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 11, 0 );		//	envelope period (L)
-	psg_write_register( hpsg, 12, 1 );		//	envelope period (H)
+	psg_write_register( hpsg, 12, 10 );		//	envelope period (H)
 	psg_write_register( hpsg, 13, 15 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
-	sleep( 3 );
+	sleep( 1 );
 
+	psg_write_register( hpsg, 7, 0b10110111 );
+	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
+	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
+
+	for( i = 0; i < 31; i++ ) {
+		psg_write_register( hpsg, 6, i );		//	noise
+		psg_write_register( hpsg, 8, 15 );		//	use envelope
+		sleep( 1 );
+	}
+
+	sleep( 3 );
 	spk_sound_terminate();
 	return 0;
 }
