@@ -71,15 +71,29 @@ To show all installed unit files use 'systemctl list-unit-files'.
 	Executing: /lib/systemd/systemd-sysv-install disable triggerhappy
 	Removed /etc/systemd/system/multi-user.target.wants/triggerhappy.service.
 
+	$ sudo systemctl disable rpi-eeprom-update.service
+	Removed /etc/systemd/system/multi-user.target.wants/rpi-eeprom-update.service.
+
+	$ sudo systemctl disable dphys-swapfile
+	Synchronizing state of dphys-swapfile.service with SysV service script with /lib/systemd/systemd-sysv-install.
+	Executing: /lib/systemd/systemd-sysv-install disable dphys-swapfile
+	Removed /etc/systemd/system/multi-user.target.wants/dphys-swapfile.service.
+
 3. DHCPサービスのタイムアウトを短くする ( Shorten DHCP service timeout. )
 	sudo nano /etc/systemd/system/dhcpcd.service.d/wait.conf
 
-	dhcpcd のオプションに -t 5 を追加する。
-	Add -t 5 to the dhcpcd options.
+	dhcpcd のオプションに -t 3 を追加する。
+	Add -t 3 to the dhcpcd options.
 
 	[Service]
 	ExecStart=
-	ExecStart=/usr/sbin/dhcpcd -w -q -t 5
+	ExecStart=/usr/sbin/dhcpcd -w -q -t 3
+
+	sudo nano /etc/systemd/system/dhcpcd.service.d/no-wait.conf
+
+	[Service]
+	ExecStart=
+	ExecStart=/usr/sbin/dhcpcd -b -q %I
 
 4. cmdline.txt を編集する ( Edit cmdline.txt )
 	$ sudo nano /boot/cmdline.txt
