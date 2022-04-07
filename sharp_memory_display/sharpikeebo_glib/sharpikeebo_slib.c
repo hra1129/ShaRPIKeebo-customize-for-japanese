@@ -56,7 +56,7 @@ static H_PSG_T hpsg_se;
 static H_SCC_T hscc;
 
 static int16_t wave[ SAMPLE_RATE * SAMPLE_CHANNELS ];
-static int latency = 800000;		// start latency in micro seconds
+static int latency = 700000;		// start latency in micro seconds
 static int sample_offset = 0;
 
 // --------------------------------------------------------------------

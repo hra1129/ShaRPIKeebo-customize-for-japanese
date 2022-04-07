@@ -156,7 +156,7 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 		}
 	}
 
-	if( !( (!pch->tone_enable || !pch->tone) && (!pch->noise_enable || noise) ) ) {
+	if( ((pch->tone_enable == 0 || pch->tone == 1) && (pch->noise_enable == 0 || noise == 1)) == 0 ) {
 		pch->last_level = 0;
 	}
 	else {
@@ -177,13 +177,18 @@ static int inline _noise_generator( PSG_T *ppsg ) {
 	if( ppsg->clock_div32 ) return ppsg->last_noise;
 
 	if( ppsg->noise_count == 0 ) {
-		ppsg->noise_seed = ( (ppsg->noise_seed << 1) | (((ppsg->noise_seed >> 17) ^ (ppsg->noise_seed >> 14) ^ 1) & 1) ) & 0x3FFFF;
+		ppsg->last_noise = BIT(ppsg->noise_seed,17);
+		if( ppsg->noise_seed ) {
+			ppsg->noise_seed = ( (ppsg->noise_seed << 1) | (BIT(ppsg->noise_seed,17) ^ BIT(ppsg->noise_seed,14)) ) & 0x3FFFF;
+		}
+		else {
+			ppsg->noise_seed = (ppsg->noise_seed << 1) | 1;
+		}
 		ppsg->noise_count = (int) ppsg->registers[6];
 	}
 	else {
 		ppsg->noise_count--;
 	}
-	ppsg->last_noise = (ppsg->noise_seed >> 17) & 1;
 	return ppsg->last_noise;
 }
 

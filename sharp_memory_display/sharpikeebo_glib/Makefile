@@ -1,6 +1,6 @@
 CFLAGS=-c -Wall -O2 -DSPI_BUS_NUMBER=0 -I.
 LIBS = -L. -lsharpikeebo_glib -pthread -larmbianio -lm -lpulse -lpulse-simple
-all: spk_demo game_demo rotate_demo sound_demo
+all: spk_demo game_demo rotate_demo sound_demo psg_test
 
 ###############################################################################
 #  build for library
@@ -45,7 +45,7 @@ sample/usa.h : sample/usa.png image_converter.py
 #  build for game_demo
 ###############################################################################
 game_demo: libsharpikeebo_glib.a sample/game_demo.o sample/game.o
-	$(CC) sample/game_demo.o sample/game.o $(LIBS) -o sample/game_demo
+	$(CC) sample/game_demo.o sample/game.o $(LIBS) -o game_demo
 
 sample/game_demo.o: sharpikeebo_glib.h sample/game_demo.c sample/game.h
 	$(CC) $(CFLAGS) sample/game_demo.c -o sample/game_demo.o
@@ -71,11 +71,20 @@ sample/rotate_demo.o: sharpikeebo_glib.h sample/rotate_demo.c sample/startup_log
 sound_demo: libsharpikeebo_glib.a sharpikeebo_slib.o sample/sound_demo.o
 	$(CC) sharpikeebo_slib.o sample/sound_demo.o $(LIBS) -o sound_demo
 
-sample/sound_demo.o: sharpikeebo_glib.h sample/sound_demo.c
+sample/sound_demo.o: sharpikeebo_glib.h sharpikeebo_slib.h sample/sound_demo.c
 	$(CC) $(CFLAGS) sample/sound_demo.c -o sample/sound_demo.o
+
+###############################################################################
+#  test
+###############################################################################
+psg_test: libsharpikeebo_glib.a test/psg_test.o
+	$(CC) test/psg_test.o $(LIBS) -o psg_test
+
+test/psg_test.o: sharpikeebo_slib.h test/psg_test.c
+	$(CC) $(CFLAGS) test/psg_test.c -o test/psg_test.o
 
 ###############################################################################
 #  clean
 ###############################################################################
 clean:
-	rm -rf *.o sample/*.o spk_demo game_demo rotate_demo sound_demo
+	rm -rf *.o sample/*.o test/*.o spk_demo game_demo rotate_demo sound_demo psg_test

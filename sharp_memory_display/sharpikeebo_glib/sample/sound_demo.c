@@ -36,7 +36,7 @@ int main( int argc, char *argv[] ) {
 	hpsg = spk_get_psg_handle();
 
 	psg_write_register( hpsg, 7, 0b10111110 );
-
+/*
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 	psg_write_register( hpsg, 8, 15 );		//	volume
@@ -136,7 +136,7 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 13, 15 );		//	envelope type
 	psg_write_register( hpsg, 8, 16 );		//	use envelope
 	sleep( 1 );
-
+*/
 	psg_write_register( hpsg, 7, 0b10110111 );
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
