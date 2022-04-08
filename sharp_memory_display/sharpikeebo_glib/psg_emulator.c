@@ -86,7 +86,7 @@ H_PSG_T psg_initialize( void ) {
 	}
 
 	memset( ppsg, 0, sizeof(PSG_T) );
-	ppsg->noise_seed = 0x3FFFF;
+	ppsg->noise_seed = 0x1FFFF;
 	return ppsg;
 }
 
@@ -105,7 +105,9 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 	}
 
 	if( pch->counter == 0 ) {
-		pch->counter	= pch->periodic_register;
+		if( pch->periodic_register ) {
+			pch->counter	= pch->periodic_register - 1;
+		}
 		pch->tone		= 1 - pch->tone;
 	}
 	else {
@@ -114,7 +116,9 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 
 	if( ppsg->clock_div32 == 0 ) {
 		if( pch->envelope_counter == 0 ) {
-			pch->envelope_counter = pch->envelope_period;
+			if( pch->envelope_period ) {
+				pch->envelope_counter = pch->envelope_period - 1;
+			}
 
 			if( pch->envelope_state != 0 ) {
 				if( (BIT(pch->envelope_state, 4) == 1) || (BIT(pch->envelope_type, ENVELOPE_HOLD) == 0 && BIT(pch->envelope_type, ENVELOPE_CONT) == 1) ) {
@@ -177,14 +181,16 @@ static int inline _noise_generator( PSG_T *ppsg ) {
 	if( ppsg->clock_div32 ) return ppsg->last_noise;
 
 	if( ppsg->noise_count == 0 ) {
-		ppsg->last_noise = BIT(ppsg->noise_seed,17);
-		if( ppsg->noise_seed ) {
-			ppsg->noise_seed = ( (ppsg->noise_seed << 1) | (BIT(ppsg->noise_seed,17) ^ BIT(ppsg->noise_seed,14)) ) & 0x3FFFF;
+		ppsg->last_noise = BIT(ppsg->noise_seed,16);
+		if( (ppsg->noise_seed & 0x0FFFF) != 0 ) {
+			ppsg->noise_seed = ( (ppsg->noise_seed << 1) | (BIT(ppsg->noise_seed,16) ^ BIT(ppsg->noise_seed,14)) ) & 0x1FFFF;
 		}
 		else {
-			ppsg->noise_seed = (ppsg->noise_seed << 1) | 1;
+			ppsg->noise_seed = 1;
 		}
-		ppsg->noise_count = (int) ppsg->registers[6];
+		if( ppsg->registers[6] ) {
+			ppsg->noise_count = (int) ppsg->registers[6] - 1;
+		}
 	}
 	else {
 		ppsg->noise_count--;
@@ -197,6 +203,7 @@ void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples ) {
 	int i, j, ch0, ch1, ch2, noise, next_clock, level;
 	PSG_T *ppsg = (PSG_T*) hpsg;
 
+	ch0 = ch1 = ch2 = 0;
 	for( i = 0; i < samples; i++ ) {
 		next_clock = ppsg->samples * PSG_CLOCK / SAMPLE_RATE;
 		ppsg->samples++;
@@ -229,20 +236,23 @@ void psg_write_register( H_PSG_T hpsg, uint8_t address, uint8_t data ) {
 	psg_address = address & 15;
 	ppsg->registers[ psg_address ] = data;
 	switch( psg_address ) {
-	case 0:
 	case 1:
 		ppsg->registers[1]					= ppsg->registers[1] & 15;
+	case 0:
 		ppsg->channel[0].periodic_register	= (int)ppsg->registers[0] | (((int)ppsg->registers[1]) << 8);
 		break;
-	case 2:
 	case 3:
 		ppsg->registers[3]					= ppsg->registers[3] & 15;
+	case 2:
 		ppsg->channel[1].periodic_register	= (int)ppsg->registers[2] | (((int)ppsg->registers[3]) << 8);
 		break;
-	case 4:
 	case 5:
 		ppsg->registers[5]					= ppsg->registers[5] & 15;
+	case 4:
 		ppsg->channel[2].periodic_register	= (int)ppsg->registers[4] | (((int)ppsg->registers[5]) << 8);
+		break;
+	case 6:
+		ppsg->registers[6]					= ppsg->registers[6] & 31;
 		break;
 	case 7:
 		ppsg->channel[0].tone_enable		= ( (data &  1) == 0 );
@@ -271,7 +281,7 @@ void psg_write_register( H_PSG_T hpsg, uint8_t address, uint8_t data ) {
 		ppsg->channel[2].envelope_period	= ppsg->channel[0].envelope_period;
 		break;
 	case 13:
-		ppsg->channel[0].envelope_type		= data;
+		ppsg->channel[0].envelope_type		= data & 15;
 		ppsg->channel[0].envelope_state		= 31;
 		ppsg->channel[0].envelope_counter	= ppsg->channel[0].envelope_period;
 		ppsg->channel[1].envelope_type		= data;
