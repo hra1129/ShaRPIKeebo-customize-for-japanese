@@ -35,8 +35,8 @@ typedef struct {
 #define SAMPLE_RATE		48000		//	Hz
 #endif
 
-#ifndef PSG_CLOCK
-#define PSG_CLOCK		3579545		//	Hz
+#ifndef SCC_CLOCK
+#define SCC_CLOCK		3579545		//	Hz
 #endif
 
 // --------------------------------------------------------------------
