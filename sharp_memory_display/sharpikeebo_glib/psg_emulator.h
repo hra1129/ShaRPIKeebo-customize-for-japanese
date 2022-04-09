@@ -64,7 +64,7 @@ void psg_terminate( H_PSG_T hpsg );
 //		An 8-bit signed monaural signal is written to pwave.
 //		samples indicates the size of the pwave and is equal to the number of BYTEs.
 // --------------------------------------------------------------------
-void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples );
+void psg_generate_wave( H_PSG_T hpsg, int16_t *pwave, int samples );
 
 // --------------------------------------------------------------------
 //	psg_write_register
@@ -75,7 +75,7 @@ void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples );
 //	output)
 //		none
 // --------------------------------------------------------------------
-void psg_write_register( H_PSG_T hpsg, uint8_t address, uint8_t data );
+void psg_write_register( H_PSG_T hpsg, uint16_t address, uint8_t data );
 
 #ifdef __cplusplus
 }

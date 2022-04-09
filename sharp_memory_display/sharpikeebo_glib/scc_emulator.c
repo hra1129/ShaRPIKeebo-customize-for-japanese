@@ -57,3 +57,11 @@ void scc_terminate( H_SCC_T hscc ) {
 
 	free( hscc );
 }
+
+// --------------------------------------------------------------------
+void scc_generate_wave( H_SCC_T hscc, int16_t *pwave, int samples ) {
+}
+
+// --------------------------------------------------------------------
+void scc_write_register( H_SCC_T hscc, uint16_t address, uint8_t data ) {
+}

@@ -56,30 +56,30 @@ static H_PSG_T hpsg_se;
 static H_SCC_T hscc;
 
 static int16_t wave[ SAMPLE_RATE * SAMPLE_CHANNELS ];
-static int latency = 700000;		// start latency in micro seconds
+static int latency = 300;		// start latency in milli seconds
 static int sample_offset = 0;
 
 // --------------------------------------------------------------------
 static void _sound_generator( int16_t *p_wave, int samples ) {
-	static uint8_t wave[ SAMPLE_RATE ];
+	static int16_t wave[ SAMPLE_RATE ];
 	int i;
 
 	psg_generate_wave( hpsg, wave, samples );
 	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] = (int)wave[ i ] * 32;
-		p_wave[ (i << 1) + 1 ] = (int)wave[ i ] * 32;
+		p_wave[ (i << 1) + 0 ] = wave[ i ] * 32;
+		p_wave[ (i << 1) + 1 ] = wave[ i ] * 32;
 	}
 
 	psg_generate_wave( hpsg_se, wave, samples );
 	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] += (int)wave[ i ] * 32;
-		p_wave[ (i << 1) + 1 ] += (int)wave[ i ] * 32;
+		p_wave[ (i << 1) + 0 ] += wave[ i ] * 32;
+		p_wave[ (i << 1) + 1 ] += wave[ i ] * 32;
 	}
 
 //	scc_generate_wave( hscc, wave, samples );
 //	for( i = 0; i < samples; i++ ) {
-//		p_wave[ (i << 1) + 0 ] = (int)wave[ i ] * 32;
-//		p_wave[ (i << 1) + 1 ] = (int)wave[ i ] * 32;
+//		p_wave[ (i << 1) + 0 ] = wave[ i ] * 32;
+//		p_wave[ (i << 1) + 1 ] = wave[ i ] * 32;
 //	}
 }
 
@@ -187,10 +187,10 @@ int spk_sound_initialize( void ) {
 	pa_stream_set_underflow_callback( playstream, stream_underflow_cb, NULL );
 
 	buf_attr.fragsize	= (uint32_t) -1;
-	buf_attr.maxlength	= pa_usec_to_bytes( latency, &ss);
-	buf_attr.minreq		= pa_usec_to_bytes( 0, &ss );
-	buf_attr.prebuf		= (uint32_t) -1;
-	buf_attr.tlength	= pa_usec_to_bytes( latency, &ss );
+	buf_attr.maxlength	= (uint32_t) -1;
+	buf_attr.minreq		= (uint32_t) -1;
+	buf_attr.prebuf		= pa_usec_to_bytes( 0, &ss );
+	buf_attr.tlength	= pa_usec_to_bytes( latency * 1000, &ss );
 	r = pa_stream_connect_playback( playstream, NULL, &buf_attr,
 			PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY,
 			NULL, NULL );

@@ -50,6 +50,31 @@ H_SCC_T scc_initialize( void );
 // --------------------------------------------------------------------
 void scc_terminate( H_SCC_T hscc );
 
+// --------------------------------------------------------------------
+//	scc_generate_wave
+//	input)
+//		hscc ......... H_SCC_T instance
+//		pwave ........ Wave memory address
+//		samples ...... Samples of Wave memory
+//	output)
+//		none
+//	comment)
+//		An 8-bit signed monaural signal is written to pwave.
+//		samples indicates the size of the pwave and is equal to the number of BYTEs.
+// --------------------------------------------------------------------
+void scc_generate_wave( H_SCC_T hscc, int16_t *pwave, int samples );
+
+// --------------------------------------------------------------------
+//	scc_write_register
+//	input)
+//		hpsg ......... H_SCC_T instance
+//		address ...... SCC register address
+//		data ......... Write data
+//	output)
+//		none
+// --------------------------------------------------------------------
+void scc_write_register( H_SCC_T hscc, uint16_t address, uint8_t data );
+
 #ifdef __cplusplus
 }
 #endif

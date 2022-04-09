@@ -35,12 +35,7 @@ typedef struct {
 	int			periodic_register;
 	int			counter;
 	int			volume;
-	int			envelope_period;
-	int			envelope_type;
-	int			envelope_counter;
-	int			envelope_state;
 	int			tone;
-	int			envelope;
 	int			last_level;
 } PSG_1CH_T;
 
@@ -50,6 +45,11 @@ typedef struct {
 	int			clock_div32;
 	uint8_t		registers[16];
 	PSG_1CH_T	channel[3];
+	int			envelope_period;
+	int			envelope_type;
+	int			envelope_counter;
+	int			envelope_state;
+	int			envelope;
 	uint32_t	noise_seed;
 	int			noise_count;
 	int			last_noise;
@@ -114,58 +114,12 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 		pch->counter--;
 	}
 
-	if( ppsg->clock_div32 == 0 ) {
-		if( pch->envelope_counter == 0 ) {
-			if( pch->envelope_period ) {
-				pch->envelope_counter = pch->envelope_period - 1;
-			}
-
-			if( pch->envelope_state != 0 ) {
-				if( (BIT(pch->envelope_state, 4) == 1) || (BIT(pch->envelope_type, ENVELOPE_HOLD) == 0 && BIT(pch->envelope_type, ENVELOPE_CONT) == 1) ) {
-					pch->envelope_state = (pch->envelope_state - 1) & 31;
-				}
-			}
-			else {
-				if( BIT(pch->envelope_type, ENVELOPE_CONT) == 0 ) {
-					pch->envelope = 0;
-					pch->envelope_state = 0;
-				}
-				else {
-					pch->envelope_state = 31;
-				}
-			}
-
-			if( BIT(pch->envelope_state, 4) == 0 && BIT(pch->envelope_type, ENVELOPE_CONT) == 0 ) {
-				pch->envelope = 0;
-			}
-			else if( BIT(pch->envelope_state, 4) == 1 || (BIT(pch->envelope_type, ENVELOPE_ALTER) ^ BIT(pch->envelope_type, ENVELOPE_HOLD)) == 0 ) {
-				if( BIT(pch->envelope_state, ENVELOPE_ATTACK) == 1 ) {
-					pch->envelope = (pch->envelope_state & 15) ^ 15;
-				}
-				else {
-					pch->envelope = (pch->envelope_state & 15);
-				}
-			}
-			else {
-				if( BIT(pch->envelope_state, ENVELOPE_ATTACK) == 1 ) {
-					pch->envelope = (pch->envelope_state & 15);
-				}
-				else {
-					pch->envelope = (pch->envelope_state & 15) ^ 15;
-				}
-			}
-		}
-		else {
-			pch->envelope_counter--;
-		}
-	}
-
 	if( ((pch->tone_enable == 0 || pch->tone == 1) && (pch->noise_enable == 0 || noise == 1)) == 0 ) {
 		pch->last_level = 0;
 	}
 	else {
 		if( pch->envelope_enable ) {
-			index = pch->envelope;
+			index = ppsg->envelope;
 		}
 		else {
 			index = pch->volume;
@@ -173,6 +127,56 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 		pch->last_level = volume_table[ index ];
 	}
 	return pch->last_level;
+}
+
+// --------------------------------------------------------------------
+static void inline _envelope_generator( PSG_T *ppsg ) {
+
+	if( ppsg->clock_div32 == 0 ) {
+		if( ppsg->envelope_counter == 0 ) {
+			if( ppsg->envelope_period ) {
+				ppsg->envelope_counter = ppsg->envelope_period - 1;
+			}
+
+			if( ppsg->envelope_state != 0 ) {
+				if( (BIT(ppsg->envelope_state, 4) == 1) || (BIT(ppsg->envelope_type, ENVELOPE_HOLD) == 0 && BIT(ppsg->envelope_type, ENVELOPE_CONT) == 1) ) {
+					ppsg->envelope_state = (ppsg->envelope_state - 1) & 31;
+				}
+			}
+			else {
+				if( BIT(ppsg->envelope_type, ENVELOPE_CONT) == 0 ) {
+					ppsg->envelope = 0;
+					ppsg->envelope_state = 0;
+				}
+				else {
+					ppsg->envelope_state = 31;
+				}
+			}
+
+			if( BIT(ppsg->envelope_state, 4) == 0 && BIT(ppsg->envelope_type, ENVELOPE_CONT) == 0 ) {
+				ppsg->envelope = 0;
+			}
+			else if( BIT(ppsg->envelope_state, 4) == 1 || (BIT(ppsg->envelope_type, ENVELOPE_ALTER) ^ BIT(ppsg->envelope_type, ENVELOPE_HOLD)) == 0 ) {
+				if( BIT(ppsg->envelope_state, ENVELOPE_ATTACK) == 1 ) {
+					ppsg->envelope = (ppsg->envelope_state & 15) ^ 15;
+				}
+				else {
+					ppsg->envelope = (ppsg->envelope_state & 15);
+				}
+			}
+			else {
+				if( BIT(ppsg->envelope_state, ENVELOPE_ATTACK) == 1 ) {
+					ppsg->envelope = (ppsg->envelope_state & 15);
+				}
+				else {
+					ppsg->envelope = (ppsg->envelope_state & 15) ^ 15;
+				}
+			}
+		}
+		else {
+			ppsg->envelope_counter--;
+		}
+	}
 }
 
 // --------------------------------------------------------------------
@@ -199,7 +203,7 @@ static int inline _noise_generator( PSG_T *ppsg ) {
 }
 
 // --------------------------------------------------------------------
-void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples ) {
+void psg_generate_wave( H_PSG_T hpsg, int16_t *pwave, int samples ) {
 	int i, j, ch0, ch1, ch2, noise, next_clock, level;
 	PSG_T *ppsg = (PSG_T*) hpsg;
 
@@ -213,12 +217,13 @@ void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples ) {
 			//	1clock
 			ppsg->clock_div32 = (ppsg->clock_div32 + 1) & 31;
 			noise	= _noise_generator( ppsg );
+			_envelope_generator( ppsg );
 			ch0		= _tone_generator( ppsg, &ppsg->channel[0], noise );
 			ch1		= _tone_generator( ppsg, &ppsg->channel[1], noise );
 			ch2		= _tone_generator( ppsg, &ppsg->channel[2], noise );
-			level	+= (ch0 + ch1 + ch2) >> 2;
+			level	+= ch0 + ch1 + ch2;
 		}
-		pwave[i] = (int8_t)( level / (next_clock - ppsg->clock) );
+		pwave[i] = (int16_t)( level / (next_clock - ppsg->clock) );
 		ppsg->clock = next_clock;
 
 		if( ppsg->samples >= SAMPLE_RATE ) {
@@ -229,7 +234,7 @@ void psg_generate_wave( H_PSG_T hpsg, uint8_t *pwave, int samples ) {
 }
 
 // --------------------------------------------------------------------
-void psg_write_register( H_PSG_T hpsg, uint8_t address, uint8_t data ) {
+void psg_write_register( H_PSG_T hpsg, uint16_t address, uint8_t data ) {
 	int psg_address;
 	PSG_T *ppsg = (PSG_T*) hpsg;
 
@@ -276,20 +281,12 @@ void psg_write_register( H_PSG_T hpsg, uint8_t address, uint8_t data ) {
 		break;
 	case 11:
 	case 12:
-		ppsg->channel[0].envelope_period	= (int)ppsg->registers[11] | (((int)ppsg->registers[12]) << 8);
-		ppsg->channel[1].envelope_period	= ppsg->channel[0].envelope_period;
-		ppsg->channel[2].envelope_period	= ppsg->channel[0].envelope_period;
+		ppsg->envelope_period				= (int)ppsg->registers[11] | (((int)ppsg->registers[12]) << 8);
 		break;
 	case 13:
-		ppsg->channel[0].envelope_type		= data & 15;
-		ppsg->channel[0].envelope_state		= 31;
-		ppsg->channel[0].envelope_counter	= ppsg->channel[0].envelope_period;
-		ppsg->channel[1].envelope_type		= data;
-		ppsg->channel[1].envelope_state		= 31;
-		ppsg->channel[1].envelope_counter	= ppsg->channel[1].envelope_period;
-		ppsg->channel[2].envelope_type		= data;
-		ppsg->channel[2].envelope_state		= 31;
-		ppsg->channel[2].envelope_counter	= ppsg->channel[2].envelope_period;
+		ppsg->envelope_type					= data & 15;
+		ppsg->envelope_state				= 31;
+		ppsg->envelope_counter				= ppsg->envelope_period;
 		break;
 	default:
 		break;
