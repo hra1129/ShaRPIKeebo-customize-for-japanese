@@ -1,26 +1,18 @@
-# Define text file attributes.
-# - Treat them as text.
-# - Ensure no CRLF line-endings, neither on checkout nor on checkin.
-# - Detect whitespace errors.
-#   - Exposed by default in `git diff --color` on the CLI.
-#   - Validate with `git diff --check`.
-#   - Deny applying with `git apply --whitespace=error-all`.
-#   - Fix automatically with `git apply --whitespace=fix`.
+*			text=auto whitespace=trailing-space,space-before-tab,-indent-with-non-tab,tab-in-indent,tabwidth=4
 
-*.c		text eol=lf whitespace=blank-at-eol,-blank-at-eof,-space-before-tab,tab-in-indent,tabwidth=4
-*.cpp	text eol=lf whitespace=blank-at-eol,-blank-at-eof,-space-before-tab,tab-in-indent,tabwidth=4
-*.h		text eol=lf whitespace=blank-at-eol,-blank-at-eof,-space-before-tab,tab-in-indent,tabwidth=4
-*.hpp	text eol=lf whitespace=blank-at-eol,-blank-at-eof,-space-before-tab,tab-in-indent,tabwidth=4
-*.txt	text eol=lf whitespace=blank-at-eol,-blank-at-eof,-space-before-tab,tab-in-indent,tabwidth=4
-*.html	text eol=lf whitespace=blank-at-eol,-blank-at-eof,-space-before-tab,tab-in-indent,tabwidth=4
+*.c			text
+*.cpp		text
+*.h			text
+*.hpp		text
+*.py		text
+*.txt		text
+*.html		text
+Makefile	text
 
-# Define binary file attributes.
-# - Do not treat them as text.
-# - Include binary diff in patches instead of "binary files differ."
-*.exe     -text diff
-*.gif     -text diff
-*.jpeg    -text diff
-*.jpg     -text diff
-*.vsdx    -text diff
-*.xlsx    -text diff
-*.png     -text diff
+*.exe		binary
+*.gif		binary
+*.jpeg		binary
+*.jpg		binary
+*.vsdx		binary
+*.xlsx		binary
+*.png		binary
