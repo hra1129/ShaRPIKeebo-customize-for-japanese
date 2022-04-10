@@ -76,11 +76,11 @@ static void _sound_generator( int16_t *p_wave, int samples ) {
 		p_wave[ (i << 1) + 1 ] += wave[ i ] * 32;
 	}
 
-//	scc_generate_wave( hscc, wave, samples );
-//	for( i = 0; i < samples; i++ ) {
-//		p_wave[ (i << 1) + 0 ] = wave[ i ] * 32;
-//		p_wave[ (i << 1) + 1 ] = wave[ i ] * 32;
-//	}
+	scc_generate_wave( hscc, wave, samples );
+	for( i = 0; i < samples; i++ ) {
+		p_wave[ (i << 1) + 0 ] = wave[ i ] * 32;
+		p_wave[ (i << 1) + 1 ] = wave[ i ] * 32;
+	}
 }
 
 // --------------------------------------------------------------------

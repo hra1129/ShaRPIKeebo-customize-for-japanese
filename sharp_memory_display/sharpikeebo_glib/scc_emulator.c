@@ -28,7 +28,20 @@
 #include <scc_emulator.h>
 
 typedef struct {
+	int			tone_enable;
+	int			periodic_register;
+	int			counter;
+	int			volume;
+	int			sample_pos;
+	int			last_level;
+	int			wave[32];
+} SCC_1CH_T;
+
+typedef struct {
+	uint32_t	samples;
 	uint32_t	clock;
+	int			counter_reset_mode;
+	SCC_1CH_T	channel[5];
 } SCC_T;
 
 #ifndef SAMPLE_RATE
@@ -38,6 +51,8 @@ typedef struct {
 #ifndef SCC_CLOCK
 #define SCC_CLOCK		3579545		//	Hz
 #endif
+
+#define BIT( d, n )			(((d) >> (n)) & 1)
 
 // --------------------------------------------------------------------
 H_SCC_T scc_initialize( void ) {
@@ -59,9 +74,103 @@ void scc_terminate( H_SCC_T hscc ) {
 }
 
 // --------------------------------------------------------------------
+static int _tone_generator( SCC_T *pscc, SCC_1CH_T *pch ) {
+
+	if( pch->counter == 0 ) {
+		if( pch->periodic_register ) {
+			pch->counter	= pch->periodic_register;
+		}
+		pch->sample_pos		= (pch->sample_pos + 1) & 31;
+
+		if( !pch->tone_enable ) {
+			pch->last_level = 0;
+		}
+		else {
+			pch->last_level = pch->volume * pch->wave[ pch->sample_pos ];
+		}
+	}
+	else {
+		pch->counter--;
+	}
+	return pch->last_level;
+}
+
+// --------------------------------------------------------------------
 void scc_generate_wave( H_SCC_T hscc, int16_t *pwave, int samples ) {
+	int i, j, k, next_clock, level;
+	SCC_T *pscc = (SCC_T*) hscc;
+
+	for( i = 0; i < samples; i++ ) {
+		next_clock = pscc->samples * SCC_CLOCK / SAMPLE_RATE;
+		pscc->samples++;
+
+		level = 0;
+		for( j = pscc->clock; j < next_clock; j++ ) {
+			//	1clock
+			for( k = 0; k < 5; k++ ) {
+				level += _tone_generator( pscc, &pscc->channel[k] );
+			}
+		}
+		pwave[i] = (int16_t)( level / (next_clock - pscc->clock) );
+		pscc->clock = next_clock;
+
+		if( pscc->samples >= SAMPLE_RATE ) {
+			pscc->clock		-= SCC_CLOCK;
+			pscc->samples	-= SAMPLE_RATE;
+		}
+	}
 }
 
 // --------------------------------------------------------------------
 void scc_write_register( H_SCC_T hscc, uint16_t address, uint8_t data ) {
+	int ch;
+	SCC_T *pscc = (SCC_T*) hscc;
+
+	if( address < 0xB800 || address > 0xBFFF ) {
+		return;
+	}
+	address -= 0xB800;
+	if( address < 0x00A0 ) {
+		//	wave memory
+		ch = address >> 5;
+		pscc->channel[ch].wave[address & 31] = data;
+	}
+	else if( address < 0xAA ) {
+		//	frequency
+		ch = (address >> 1) & 7;
+		if( (address & 1) == 0 ) {
+			pscc->channel[ch].periodic_register = (pscc->channel[ch].periodic_register & ~0xFF) | (int)data;
+		}
+		else {
+			pscc->channel[ch].periodic_register = (pscc->channel[ch].periodic_register & 0xFF) | ((int)data << 8);
+		}
+		if( pscc->counter_reset_mode ) {
+			pscc->channel[ch].counter = pscc->channel[ch].periodic_register;
+			pscc->channel[ch].sample_pos = 0;
+		}
+	}
+	else if( address < 0xAF ) {
+		//	volume
+		ch = (address - 0xAA) & 7;
+		pscc->channel[ch].volume = data & 15;
+	}
+	else if( address == 0xAF ) {
+		pscc->channel[0].tone_enable	= BIT( data, 0 );
+		pscc->channel[1].tone_enable	= BIT( data, 1 );
+		pscc->channel[2].tone_enable	= BIT( data, 2 );
+		pscc->channel[3].tone_enable	= BIT( data, 3 );
+		pscc->channel[4].tone_enable	= BIT( data, 4 );
+	}
+	else if( address < 0xC0 ) {
+		//	volume
+		ch = (address - 0xAA) & 7;
+		pscc->channel[ch].volume = data & 15;
+	}
+	else if( address < 0xFE ) {
+		//	mode register1
+		pscc->counter_reset_mode = BIT( data, 5 );
+	}
+	else {
+		//	mode register2
+	}
 }
