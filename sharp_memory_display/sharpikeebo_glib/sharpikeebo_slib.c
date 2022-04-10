@@ -66,20 +66,20 @@ static void _sound_generator( int16_t *p_wave, int samples ) {
 
 	psg_generate_wave( hpsg, wave, samples );
 	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] = wave[ i ] * 32;
-		p_wave[ (i << 1) + 1 ] = wave[ i ] * 32;
+		p_wave[ (i << 1) + 0 ] = wave[ i ] * 8;
+		p_wave[ (i << 1) + 1 ] = wave[ i ] * 8;
 	}
 
 	psg_generate_wave( hpsg_se, wave, samples );
 	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] += wave[ i ] * 32;
-		p_wave[ (i << 1) + 1 ] += wave[ i ] * 32;
+		p_wave[ (i << 1) + 0 ] += wave[ i ] * 8;
+		p_wave[ (i << 1) + 1 ] += wave[ i ] * 8;
 	}
 
 	scc_generate_wave( hscc, wave, samples );
 	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] = wave[ i ] * 32;
-		p_wave[ (i << 1) + 1 ] = wave[ i ] * 32;
+		p_wave[ (i << 1) + 0 ] += wave[ i ] * 8;
+		p_wave[ (i << 1) + 1 ] += wave[ i ] * 8;
 	}
 }
 
