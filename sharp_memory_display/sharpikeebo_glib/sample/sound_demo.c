@@ -67,8 +67,8 @@ static void envelope_test( H_PSG_T hpsg, int tone, int time, int envelope, int e
 	psg_write_register( hpsg, 1, tone_table[ tone ] >> 8 );			//	tone period (H)
 	psg_write_register( hpsg, 11, envelope_freq & 255 );			//	envelope period (L)
 	psg_write_register( hpsg, 12, envelope_freq >> 8 );				//	envelope period (H)
-	psg_write_register( hpsg, 13, envelope );						//	envelope type
 	psg_write_register( hpsg, 8, 16 );								//	use envelope
+	psg_write_register( hpsg, 13, envelope );						//	envelope type
 	sleep( time );
 }
 
@@ -96,7 +96,7 @@ int main( int argc, char *argv[] ) {
 	sleep( 1 );
 
 	for( i = 0; i < 16; i++ ) {
-		envelope_test( hpsg, 0, 1, i, 1000 );
+		envelope_test( hpsg, 0, 2, i, 2000 );
 	}
 	printf( "Stop.\n" );
 	psg_write_register( hpsg, 8, 0 );		//	use envelope
@@ -107,10 +107,12 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 1, 1 );		//	tone period (H)
 
 	for( i = 0; i < 31; i++ ) {
+		printf( "Noise freq. %d.\n", i );
 		psg_write_register( hpsg, 6, i );		//	noise
 		psg_write_register( hpsg, 8, 15 );		//	use envelope
 		sleep( 1 );
 	}
+	printf( "Stop.\n" );
 
 	sleep( 3 );
 	spk_sound_terminate();

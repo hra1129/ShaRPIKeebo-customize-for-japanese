@@ -61,25 +61,17 @@ static int sample_offset = 0;
 
 // --------------------------------------------------------------------
 static void _sound_generator( int16_t *p_wave, int samples ) {
-	static int16_t wave[ SAMPLE_RATE ];
+	static int16_t wave1[ SAMPLE_RATE ];
+	static int16_t wave2[ SAMPLE_RATE ];
+	static int16_t wave3[ SAMPLE_RATE ];
 	int i;
 
-	psg_generate_wave( hpsg, wave, samples );
+	psg_generate_wave( hpsg,    wave1, samples );
+	psg_generate_wave( hpsg_se, wave2, samples );
+	scc_generate_wave( hscc,    wave3, samples );
 	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] = wave[ i ] * 8;
-		p_wave[ (i << 1) + 1 ] = wave[ i ] * 8;
-	}
-
-	psg_generate_wave( hpsg_se, wave, samples );
-	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] += wave[ i ] * 8;
-		p_wave[ (i << 1) + 1 ] += wave[ i ] * 8;
-	}
-
-	scc_generate_wave( hscc, wave, samples );
-	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] += wave[ i ] * 8;
-		p_wave[ (i << 1) + 1 ] += wave[ i ] * 8;
+		p_wave[ (i << 1) + 0 ] = (wave1[ i ] + wave2[ i ] + wave3[ i ]) * 8;
+		p_wave[ (i << 1) + 1 ] = (wave1[ i ] + wave2[ i ] + wave3[ i ]) * 8;
 	}
 }
 
@@ -87,13 +79,17 @@ static void _sound_generator( int16_t *p_wave, int samples ) {
 static void *_wave_thread( void *p_no_use ) {
 
 	pa_mainloop_run( pa_ml, NULL );
+
+	pa_context_disconnect( pa_ctx );
+	pa_context_unref( pa_ctx );
+	pa_ctx = NULL;
 	return NULL;
 }
 
 // --------------------------------------------------------------------
 static void stream_request_cb( pa_stream *s, size_t byte_length, void *p_no_use ) {
-	//pa_usec_t usec;
-	//int neg;
+	pa_usec_t usec;
+	int neg;
 	int samples;
 
 	byte_length &= ~3;
@@ -101,7 +97,7 @@ static void stream_request_cb( pa_stream *s, size_t byte_length, void *p_no_use 
 		byte_length = sizeof(wave);
 	}
 	samples = byte_length >> 2;
-	//pa_stream_get_latency( s, &usec, &neg );
+	pa_stream_get_latency( s, &usec, &neg );
 	if( (sample_offset + (samples << 1)) > (sizeof(wave) >> 1) ) {
 		sample_offset = 0;
 	}
@@ -164,7 +160,7 @@ int spk_sound_initialize( void ) {
 
 	pa_ml		= pa_mainloop_new();
 	pa_mlapi	= pa_mainloop_get_api( pa_ml );
-	pa_ctx		= pa_context_new(pa_mlapi, "sharpikeebo_slib");
+	pa_ctx		= pa_context_new( pa_mlapi, "sharpikeebo_slib" );
 	pa_context_connect( pa_ctx, NULL, 0, NULL );
 
 	pa_context_set_state_callback( pa_ctx, pa_state_cb, &pa_ready );
@@ -213,12 +209,15 @@ int spk_sound_initialize( void ) {
 void spk_sound_terminate( void ) {
 	void *p_result;
 
-	pa_mainloop_quit( pa_ml, 0 );
-	pthread_join( h_wave_thread, &p_result );
+	if( pa_ml != NULL ) {
+		pa_mainloop_quit( pa_ml, 0 );
+		pthread_join( h_wave_thread, &p_result );
+	}
 
-	pa_context_disconnect( pa_ctx );
-	pa_context_unref( pa_ctx );
-	pa_mainloop_free( pa_ml );
+	if( pa_ml != NULL ) {
+		pa_mainloop_free( pa_ml );
+		pa_ml = NULL;
+	}
 
 	scc_terminate( hscc );
 	psg_terminate( hpsg_se );

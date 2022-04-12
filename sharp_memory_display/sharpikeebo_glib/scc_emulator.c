@@ -74,44 +74,38 @@ void scc_terminate( H_SCC_T hscc ) {
 }
 
 // --------------------------------------------------------------------
-static int _tone_generator( SCC_T *pscc, SCC_1CH_T *pch ) {
-
-	if( pch->counter == 0 ) {
-		if( pch->periodic_register ) {
-			pch->counter	= pch->periodic_register;
-		}
-		pch->sample_pos		= (pch->sample_pos + 1) & 31;
-
-		if( !pch->tone_enable ) {
-			pch->last_level = 0;
-		}
-		else {
-			pch->last_level = pch->volume * pch->wave[ pch->sample_pos ];
-		}
+static int _tone_generator( SCC_T *pscc, SCC_1CH_T *pch, int increment ) {
+	int shift, level;
+	
+	pch->counter += increment;
+	if( pch->counter >= pch->periodic_register ) {
+		shift				= pch->counter / (pch->periodic_register + 1);
+		pch->sample_pos		= (pch->sample_pos + shift) & 31;
+		level				= (pch->volume * pch->wave[ pch->sample_pos ]) >> 4;
+		pch->last_level		= level;
 	}
 	else {
-		pch->counter--;
+		level				= pch->last_level;
 	}
-	return pch->last_level;
+	return level;
 }
 
 // --------------------------------------------------------------------
 void scc_generate_wave( H_SCC_T hscc, int16_t *pwave, int samples ) {
-	int i, j, k, next_clock, level;
+	int i, next_clock, diff_clock, level;
 	SCC_T *pscc = (SCC_T*) hscc;
 
 	for( i = 0; i < samples; i++ ) {
 		next_clock = pscc->samples * SCC_CLOCK / SAMPLE_RATE;
+		diff_clock = next_clock - pscc->clock;
 		pscc->samples++;
 
-		level = 0;
-		for( j = pscc->clock; j < next_clock; j++ ) {
-			//	1clock
-			for( k = 0; k < 5; k++ ) {
-				level += _tone_generator( pscc, &pscc->channel[k] );
-			}
-		}
-		pwave[i] = (int16_t)( level / (next_clock - pscc->clock) );
+		level	= _tone_generator( pscc, &pscc->channel[0], diff_clock )
+				+ _tone_generator( pscc, &pscc->channel[1], diff_clock )
+				+ _tone_generator( pscc, &pscc->channel[2], diff_clock )
+				+ _tone_generator( pscc, &pscc->channel[3], diff_clock )
+				+ _tone_generator( pscc, &pscc->channel[4], diff_clock );
+		pwave[i] = (int16_t) level;
 		pscc->clock = next_clock;
 
 		if( pscc->samples >= SAMPLE_RATE ) {
@@ -145,7 +139,7 @@ void scc_write_register( H_SCC_T hscc, uint16_t address, uint8_t data ) {
 			pscc->channel[ch].periodic_register = (pscc->channel[ch].periodic_register & 0xFF) | ((int)data << 8);
 		}
 		if( pscc->counter_reset_mode ) {
-			pscc->channel[ch].counter = pscc->channel[ch].periodic_register;
+			pscc->channel[ch].counter = 0;
 			pscc->channel[ch].sample_pos = 0;
 		}
 	}
