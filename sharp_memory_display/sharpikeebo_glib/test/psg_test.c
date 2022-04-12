@@ -27,23 +27,28 @@
 
 int main( int argc, char *argv[] ) {
 	H_PSG_T hpsg;
-	static uint8_t wave[1024];
-	int i;
+	static int16_t wave[1024];
+	int i, j;
 
 	hpsg = psg_initialize();
 
-	psg_write_register( hpsg, 7, 0b10110110 );
+	psg_write_register( hpsg, 7, 0b10111110 );
 	psg_write_register( hpsg, 0, 0 );
 	psg_write_register( hpsg, 1, 1 );
 	psg_write_register( hpsg, 6, 31 );
-	psg_write_register( hpsg, 8, 15 );
+	psg_write_register( hpsg, 8, 16 );
+	psg_write_register( hpsg, 11, 40 );
+	psg_write_register( hpsg, 12, 0 );
 
-	psg_generate_wave( hpsg, wave, sizeof(wave) );
+	for( j = 0; j < 16; j++ ) {
+		psg_write_register( hpsg, 13, j );
+		psg_generate_wave( hpsg, wave, sizeof(wave)/sizeof(wave[0]) );
+		printf( "envelope %d\n", j );
+		for( i = 0; i < sizeof(wave)/sizeof(wave[0]); i++ ) {
+			printf( "%d\n", (int) wave[i] );
+		}
+	}
 
 	psg_terminate( hpsg );
-
-	for( i = 0; i < sizeof(wave); i++ ) {
-		printf( "%d\n", (int) wave[i] );
-	}
 	return 0;
 }

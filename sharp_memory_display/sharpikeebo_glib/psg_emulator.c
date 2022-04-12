@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <psg_emulator.h>
+#include <stdio.h>
 
 typedef struct {
 	int			tone_enable;
@@ -131,48 +132,61 @@ static int _tone_generator( PSG_T *ppsg, PSG_1CH_T *pch, int noise ) {
 
 // --------------------------------------------------------------------
 //	envelope
+//		bit assign ==> { CONT, ATTACK, ALTER, HOLD }
 //
-//  |\
-//  | \
-//  |  \________________________ 0000, 0001, 0010, 0011
+//                               type
+//  |\                                :
+//  | \                               :
+//  |  \________________________ 00XX : state    31, 30, 29, ... , 16, 15, 15, 15, ...
+//                                      envelope 15, 14, 13, ... , 0 , 0 , 0 , 0 , ...
 //
 //	  /|
 //   / |
-//  /  |________________________ 0100, 0101, 0110, 0111
+//  /  |________________________ 01XX : state    31, 30, 29, ... , 16, 15, 15, 15, ...
+//                                      envelope  0,  1,  2, ... , 15, 0 , 0 , 0 , ...
 //
-//  |\  |\  |\  |\  |\  |\  |\  
-//  | \ | \ | \ | \ | \ | \ | \ 
-//  |  \|  \|  \|  \|  \|  \|  \ 1000
+//  |\  |\  |\  |\  |\  |\  |\        :
+//  | \ | \ | \ | \ | \ | \ | \       :
+//  |  \|  \|  \|  \|  \|  \|  \ 1000 : state    31, 30, 29, ... , 16, 15, 14, ... , 2, 1, 0, 31, 30, ...
+//                                      envelope 15, 14, 13, ... ,  0, 15, 14, ... , 2, 1, 0, 15, 14, ...
 //
-//  |\
-//  | \
-//  |  \________________________ 1001
+//  |\                                :
+//  | \                               :
+//  |  \________________________ 1001 : state    31, 30, 29, ... , 16, 15, 15, 15, ...
+//                                      envelope 15, 14, 13, ... , 0 , 0 , 0 , 0 , ...
 //
-//  |\    /\    /\    /\    /\  
-//  | \  /  \  /  \  /  \  /  \ 
-//  |  \/    \/    \/    \/    \ 1010
+//  |\    /\    /\    /\    /\        :
+//  | \  /  \  /  \  /  \  /  \       :
+//  |  \/    \/    \/    \/    \ 1010 : state    31, 30, 29, ... , 16, 15, 14, ... , 2, 1, 0, 31, 30, ...
+//                                      envelope 15, 14, 13, ... ,  0, 15, 14, ... , 2, 1, 0, 15, 14, ...
 //
 //  |\  |~~~~~~~~~~~~~~~~~~~~~~~
 //  | \ |
-//  |  \|                        1011
+//  |  \|                        1011 : state    31, 30, 29, ... , 16, 15, 15, 15, ...
+//                                      envelope 15, 14, 13, ... , 0 , 15, 15, 15, ...
 //
 //	  /|  /|  /|  /|  /|  /|  /|
 //   / | / | / | / | / | / | / |
-//  /  |/  |/  |/  |/  |/  |/  | 1100
+//  /  |/  |/  |/  |/  |/  |/  | 1100 : state    31, 30, 29, ... , 16, 15, 14, ... , 2, 1, 0, 31, 30, ...
+//                                      envelope 15, 14, 13, ... ,  0, 15, 14, ... , 2, 1, 0, 15, 14, ...
 //
 //    /~~~~~~~~~~~~~~~~~~~~~~~~~
 //   / 
-//  /                            1101
+//  /                            1101 : state    31, 30, 29, ... , 16, 15, 15, 15, ...
+//                                      envelope 15, 14, 13, ... ,  0, 15, 15, 15, ...
 //
 //    /\    /\    /\    /\    /
 //   /  \  /  \  /  \  /  \  / 
-//  /    \/    \/    \/    \/    1110
+//  /    \/    \/    \/    \/    1110 : state    31, 30, 29, ... , 16, 15, 14, ... , 2, 1, 0, 31, 30, ...
+//                                      envelope 15, 14, 13, ... ,  0, 15, 14, ... , 2, 1, 0, 15, 14, ...
 //
 //	  /|
 //   / |
-//  /  |________________________ 1111
+//  /  |________________________ 1111 : state    31, 30, 29, ... , 16, 15, 15, 15, ...
+//                                      envelope  0,  1,  2, ... , 15, 0 , 0 , 0 , ...
 //
 static void inline _envelope_generator( PSG_T *ppsg ) {
+	int envelope;
 
 	if( ppsg->clock_div32 == 0 ) {
 		if( ppsg->envelope_counter == 0 ) {
@@ -180,38 +194,44 @@ static void inline _envelope_generator( PSG_T *ppsg ) {
 				ppsg->envelope_counter = ppsg->envelope_period - 1;
 			}
 
+			if( BIT(ppsg->envelope_state, 4) != 0 ) {
+				//	case of state = 31...16
+				envelope = ppsg->envelope_state & 15;
+				if( BIT(ppsg->envelope_type, ENVELOPE_ATTACK) != 0 ) {
+					envelope = envelope ^ 15;
+				}
+			}
+			else {
+				//	case of state = 15...0
+				if( BIT(ppsg->envelope_type, ENVELOPE_CONT) == 0 ) {
+					//	case of "type = 00XX"
+					//	case of "type = 01XX"
+					envelope = 0;
+				}
+				else {
+					envelope = ppsg->envelope_state & 15;
+					if( (BIT(ppsg->envelope_type, ENVELOPE_ATTACK) ^ BIT(ppsg->envelope_type, ENVELOPE_ALTER)) != 0 ) {
+						envelope = envelope ^ 15;
+					}
+				}
+			}
+			ppsg->envelope = envelope;
+
 			if( ppsg->envelope_state != 0 ) {
-				if( (BIT(ppsg->envelope_state, 4) == 1) || (BIT(ppsg->envelope_type, ENVELOPE_HOLD) == 0 && BIT(ppsg->envelope_type, ENVELOPE_CONT) == 1) ) {
+				if( (BIT(ppsg->envelope_state, 4) == 0) && (BIT(ppsg->envelope_type, ENVELOPE_HOLD) != 0 || BIT(ppsg->envelope_type, ENVELOPE_CONT) == 0) ) {
+					//	HOLD (state = 15)
+				}
+				else {
+					//	case of state = 31...16 or case of "type = 1XX0"
 					ppsg->envelope_state = (ppsg->envelope_state - 1) & 31;
 				}
 			}
 			else {
 				if( BIT(ppsg->envelope_type, ENVELOPE_CONT) == 0 ) {
-					ppsg->envelope = 0;
 					ppsg->envelope_state = 0;
 				}
 				else {
 					ppsg->envelope_state = 31;
-				}
-			}
-
-			if( BIT(ppsg->envelope_state, 4) == 0 && BIT(ppsg->envelope_type, ENVELOPE_CONT) == 0 ) {
-				ppsg->envelope = 0;
-			}
-			else if( BIT(ppsg->envelope_state, 4) == 1 || (BIT(ppsg->envelope_type, ENVELOPE_ALTER) ^ BIT(ppsg->envelope_type, ENVELOPE_HOLD)) == 0 ) {
-				if( BIT(ppsg->envelope_state, ENVELOPE_ATTACK) == 1 ) {
-					ppsg->envelope = (ppsg->envelope_state & 15) ^ 15;
-				}
-				else {
-					ppsg->envelope = (ppsg->envelope_state & 15);
-				}
-			}
-			else {
-				if( BIT(ppsg->envelope_state, ENVELOPE_ATTACK) == 1 ) {
-					ppsg->envelope = (ppsg->envelope_state & 15);
-				}
-				else {
-					ppsg->envelope = (ppsg->envelope_state & 15) ^ 15;
 				}
 			}
 		}
