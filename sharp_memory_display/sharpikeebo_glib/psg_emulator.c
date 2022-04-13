@@ -210,7 +210,8 @@ static void inline _envelope_generator( PSG_T *ppsg ) {
 				}
 				else {
 					envelope = ppsg->envelope_state & 15;
-					if( (BIT(ppsg->envelope_type, ENVELOPE_ATTACK) ^ BIT(ppsg->envelope_type, ENVELOPE_ALTER)) != 0 ) {
+					if( (BIT(ppsg->envelope_type, ENVELOPE_ATTACK) ^ BIT(ppsg->envelope_type, ENVELOPE_ALTER) ^ BIT(ppsg->envelope_type, ENVELOPE_HOLD)) != 0 ) {
+						//	case of 9 (100), 10 (101), 12 (110), 15 (111)
 						envelope = envelope ^ 15;
 					}
 				}

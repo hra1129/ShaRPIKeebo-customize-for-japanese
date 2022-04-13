@@ -27,7 +27,7 @@
 
 int main( int argc, char *argv[] ) {
 	H_PSG_T hpsg;
-	static int16_t wave[1024];
+	static int16_t wave[2048];
 	int i, j;
 
 	hpsg = psg_initialize();

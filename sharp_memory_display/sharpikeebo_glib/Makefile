@@ -1,6 +1,6 @@
 CFLAGS=-c -Wall -O2 -DSPI_BUS_NUMBER=0 -I.
 LIBS = -L. -lsharpikeebo_glib -pthread -larmbianio -lm -lpulse -lpulse-simple
-all: spk_demo game_demo rotate_demo sound_demo psg_test
+all: spk_demo game_demo rotate_demo sound_demo psg_test pulse_audio_test
 
 ###############################################################################
 #  build for library
@@ -82,6 +82,12 @@ psg_test: libsharpikeebo_glib.a test/psg_test.o
 
 test/psg_test.o: sharpikeebo_slib.h test/psg_test.c
 	$(CC) $(CFLAGS) test/psg_test.c -o test/psg_test.o
+
+pulse_audio_test: test/pulse_audio_test.o
+	$(CC) test/pulse_audio_test.o $(LIBS) -o pulse_audio_test
+
+test/pulse_audio_test.o: test/pulse_audio_test.c
+	$(CC) $(CFLAGS) test/pulse_audio_test.c -o test/pulse_audio_test.o
 
 ###############################################################################
 #  clean

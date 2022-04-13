@@ -95,12 +95,13 @@ int main( int argc, char *argv[] ) {
 	psg_write_register( hpsg, 8, 0 );		//	use envelope
 	sleep( 1 );
 
+	psg_write_register( hpsg, 8, 15 );		//	use envelope
 	for( i = 0; i < 16; i++ ) {
-		envelope_test( hpsg, 0, 2, i, 2000 );
+		envelope_test( hpsg, 0, 4, i, 2000 );
 	}
 	printf( "Stop.\n" );
 	psg_write_register( hpsg, 8, 0 );		//	use envelope
-	sleep( 1 );
+	sleep( 2 );
 
 	psg_write_register( hpsg, 7, 0b10110111 );
 	psg_write_register( hpsg, 0, 0 );		//	tone period (L)
