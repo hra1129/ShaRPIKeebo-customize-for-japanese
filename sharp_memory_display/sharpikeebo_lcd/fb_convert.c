@@ -34,12 +34,12 @@
 
 static const char *s_fb				= "/dev/fb0";
 
-static const int ref_bits_per_pixel		= 32;
 static const int ref_width				= 400;
 static const int ref_height				= 240;
-static const int ref_size				= ref_width * ref_height * ref_bits_per_pixel / 8;
 
 static int hfb = 0;
+static int ref_bits_per_pixel = 0;
+static int ref_size = 0;
 
 // --------------------------------------------------------------------
 int fbc_initialize( void ) {
@@ -51,14 +51,16 @@ int fbc_initialize( void ) {
 		return 0;	// Failed
 	}
 	ioctl( hfb, FBIOGET_VSCREENINFO, &si );
-	if( si.bits_per_pixel != ref_bits_per_pixel ) {
+	if( si.bits_per_pixel != 32 && si.bits_per_pixel != 16 ) {
 		fprintf( stderr, "[ERROR] Non-supported bit depths.\n" );
 		return 0;	// Failed
 	}
+	ref_bits_per_pixel = si.bits_per_pixel;
 	if( si.xres_virtual != ref_width || si.yres_virtual != ref_height ) {
 		fprintf( stderr, "[ERROR] Non-supported size of framebuffer.\n" );
 		return 0;	// Failed
 	}
+	ref_size = ref_width * ref_height * ref_bits_per_pixel / 8;
 	return 1;	// Success
 }
 

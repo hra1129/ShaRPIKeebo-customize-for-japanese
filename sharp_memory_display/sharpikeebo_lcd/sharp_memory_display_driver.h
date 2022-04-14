@@ -78,7 +78,7 @@ void smdd_transfer_bitmap( unsigned char *p_image );
 //	output)
 //		*p_dest .. 1bpp image data
 // --------------------------------------------------------------------
-void smdd_convert_image( const uint32_t *p_src, unsigned char *p_dest, int c, int zoom_x, int zoom_y, int zoom_level );
+void smdd_convert_image( const void *p_src, unsigned char *p_dest, int c, int zoom_x, int zoom_y, int zoom_level );
 
 // --------------------------------------------------------------------
 //	smdd_set_invert()
