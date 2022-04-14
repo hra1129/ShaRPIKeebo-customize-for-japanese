@@ -60,6 +60,23 @@ static void tone_test( H_PSG_T hpsg, int tone, int time ) {
 }
 
 // --------------------------------------------------------------------
+static void tone_test2( H_PSG_T hpsg, int tone1, int tone2, int tone3, int time ) {
+
+	printf( "Tone %s-%s-%s.\n", s_tone_name[ tone1 ], s_tone_name[ tone2 ], s_tone_name[ tone3 ] );
+
+	psg_write_register( hpsg, 0, tone_table[ tone1 ] & 255 );		//	tone period (L)
+	psg_write_register( hpsg, 1, tone_table[ tone1 ] >> 8 );		//	tone period (H)
+	psg_write_register( hpsg, 2, tone_table[ tone2 ] & 255 );		//	tone period (L)
+	psg_write_register( hpsg, 3, tone_table[ tone2 ] >> 8 );		//	tone period (H)
+	psg_write_register( hpsg, 4, tone_table[ tone3 ] & 255 );		//	tone period (L)
+	psg_write_register( hpsg, 5, tone_table[ tone3 ] >> 8 );		//	tone period (H)
+	psg_write_register( hpsg, 8, 15 );		//	volume
+	psg_write_register( hpsg, 9, 15 );		//	volume
+	psg_write_register( hpsg, 10, 15 );		//	volume
+	sleep( time );
+}
+
+// --------------------------------------------------------------------
 static void envelope_test( H_PSG_T hpsg, int tone, int time, int envelope, int envelope_freq ) {
 
 	printf( "Tone %s with envelope %d.\n", s_tone_name[ tone ], envelope );
@@ -93,6 +110,15 @@ int main( int argc, char *argv[] ) {
 	tone_test( hpsg, 12, 1 );
 	printf( "Stop.\n" );
 	psg_write_register( hpsg, 8, 0 );		//	use envelope
+	sleep( 1 );
+
+	psg_write_register( hpsg, 7, 0b10111000 );
+	tone_test2( hpsg,  0, 4, 7, 1 );
+	tone_test2( hpsg,  2, 6, 9, 1 );
+	printf( "Stop.\n" );
+	psg_write_register( hpsg, 8, 0 );		//	use envelope
+	psg_write_register( hpsg, 9, 0 );		//	use envelope
+	psg_write_register( hpsg, 10, 0 );		//	use envelope
 	sleep( 1 );
 
 	psg_write_register( hpsg, 8, 15 );		//	use envelope

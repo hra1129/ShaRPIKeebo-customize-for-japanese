@@ -33,22 +33,20 @@ int main( int argc, char *argv[] ) {
 	hpsg = psg_initialize();
 
 	psg_write_register( hpsg, 7, 0b10111110 );
-	psg_write_register( hpsg, 0, 0 );
-	psg_write_register( hpsg, 1, 1 );
+	psg_write_register( hpsg, 0, 1 );
+	psg_write_register( hpsg, 1, 0 );
 	psg_write_register( hpsg, 6, 31 );
 	psg_write_register( hpsg, 8, 16 );
-	psg_write_register( hpsg, 11, 40 );
-	psg_write_register( hpsg, 12, 0 );
+	psg_write_register( hpsg, 11, 100 );
+	psg_write_register( hpsg, 12, 10 );
 
-	for( j = 0; j < 16; j++ ) {
-		psg_write_register( hpsg, 13, j );
-		psg_generate_wave( hpsg, wave, sizeof(wave)/sizeof(wave[0]) );
-		printf( "envelope %d\n", j );
-		for( i = 0; i < sizeof(wave)/sizeof(wave[0]); i++ ) {
+	for( j = 0; j < 50; j++ ) {
+		psg_write_register( hpsg, 13, 8 );
+		psg_generate_wave( hpsg, wave, 1280 );
+		for( i = 0; i < 1280; i++ ) {
 			printf( "%d\n", (int) wave[i] );
 		}
 	}
-
 	psg_terminate( hpsg );
 	return 0;
 }

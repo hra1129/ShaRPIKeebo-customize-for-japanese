@@ -272,8 +272,7 @@ void psg_generate_wave( H_PSG_T hpsg, int16_t *pwave, int samples ) {
 
 	ch0 = ch1 = ch2 = 0;
 	for( i = 0; i < samples; i++ ) {
-		next_clock = ppsg->samples * PSG_CLOCK / SAMPLE_RATE;
-		ppsg->samples++;
+		next_clock = (uint32_t)( (uint64_t) ppsg->samples * PSG_CLOCK / SAMPLE_RATE );
 
 		level = 0;
 		for( j = ppsg->clock; j < next_clock; j++ ) {
@@ -288,11 +287,11 @@ void psg_generate_wave( H_PSG_T hpsg, int16_t *pwave, int samples ) {
 		}
 		pwave[i] = (int16_t)( level / (next_clock - ppsg->clock) );
 		ppsg->clock = next_clock;
-
-		if( ppsg->samples >= SAMPLE_RATE ) {
-			ppsg->clock		-= PSG_CLOCK;
-			ppsg->samples	-= SAMPLE_RATE;
-		}
+		ppsg->samples++;
+	}
+	if( ppsg->samples >= SAMPLE_RATE ) {
+		ppsg->clock		-= PSG_CLOCK;
+		ppsg->samples	-= SAMPLE_RATE;
 	}
 }
 

@@ -56,8 +56,7 @@ static H_PSG_T hpsg_se;
 static H_SCC_T hscc;
 
 static int16_t wave[ SAMPLE_RATE * SAMPLE_CHANNELS * 2 ];
-static int latency = 300;		// start latency in milli seconds
-//static int sample_offset = 0;
+static int latency = 100;		// start latency in milli seconds
 
 // --------------------------------------------------------------------
 static void _sound_generator( int16_t *p_wave, int samples ) {
@@ -70,8 +69,8 @@ static void _sound_generator( int16_t *p_wave, int samples ) {
 	psg_generate_wave( hpsg_se, wave2, samples );
 	scc_generate_wave( hscc,    wave3, samples );
 	for( i = 0; i < samples; i++ ) {
-		p_wave[ (i << 1) + 0 ] = (wave1[ i ] + wave2[ i ] + wave3[ i ]) * 8;
-		p_wave[ (i << 1) + 1 ] = (wave1[ i ] + wave2[ i ] + wave3[ i ]) * 8;
+		p_wave[ (i << 1) + 0 ] = (wave1[ i ] + wave2[ i ] + (wave3[ i ] << 1)) * 11;
+		p_wave[ (i << 1) + 1 ] = (wave1[ i ] + wave2[ i ] + (wave3[ i ] << 1)) * 11;
 	}
 }
 
@@ -184,8 +183,8 @@ int spk_sound_initialize( void ) {
 
 	buf_attr.fragsize	= (uint32_t) -1;
 	buf_attr.maxlength	= (uint32_t) -1;
-	buf_attr.minreq		= pa_usec_to_bytes( 5 * 1000, &ss );
-	buf_attr.prebuf		= pa_usec_to_bytes( 10 * 1000, &ss );
+	buf_attr.minreq		= (uint32_t) -1;
+	buf_attr.prebuf		= (uint32_t) -1;
 	buf_attr.tlength	= pa_usec_to_bytes( latency * 1000, &ss );
 	r = pa_stream_connect_playback( playstream, NULL, &buf_attr,
 			PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE | PA_STREAM_ADJUST_LATENCY,
