@@ -13,16 +13,45 @@ Display terminal contents on SharpMemoryDisplay
 	behind the scenes The contents displayed on the terminal are directly displayed on SharpMemoryDisplay.
 
 2. Settings
-	(1) Copy sharpikeebo_lcd.service placed here to /etc/systemd/system/.
+	(1) Install necessary libraries.
+		$ sudo apt-get update
+		$ sudo apt-get upgrade
+		$ sudo apt-get install pulseaudio libpulse-dev python3-pip python3-pil pigpiod
+		$ git clone https://github.com/bitbank2/ArmbianIO.git
+		$ cd ArmbianIO/
+		$ make
+		$ sudo reboot
+
+	(2) Activate SPI port.
+		$ sudo nano /boot/config.txt
+
+		Before:
+			#framebuffer_width=1280
+			#framebuffer_height=720
+		After:
+			framebuffer_width=400
+			framebuffer_height=240
+
+		Before:
+			#dtparam=spi=on
+		After:
+			dtparam=spi=on
+
+		Before:
+			dtoverlay=vc4-kms-v3d
+		After:
+			#dtoverlay=vc4-kms-v3d
+
+	(3) Copy sharpikeebo_lcd.service placed here to /etc/systemd/system/.
 
 		$ sudo cp ./sharpikeebo_lcd/sharpikeebo_lcd /usr/local/bin/
 		$ sudo cp ./sharpikeebo_lcd.service /etc/systemd/system/
 
-	(2) Give /etc/systemd/system/sharpikeebo_lcd.service the execute attribute
+	(4) Give /etc/systemd/system/sharpikeebo_lcd.service the execute attribute
 
 		$ sudo chmod 755 /etc/systemd/system/sharpikeebo_lcd.service
 
-	(3) Enable and start the sharpikeebo_lcd service
+	(5) Enable and start the sharpikeebo_lcd service
 
 		$ sudo systemctl enable sharpikeebo_lcd
 		$ sudo systemctl start sharpikeebo_lcd

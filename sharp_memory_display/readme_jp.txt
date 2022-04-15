@@ -13,14 +13,37 @@ SharpMemoryDisplay にターミナルの内容を表示する
 	ターミナルへの表示内容がそのまま SharpMemoryDisplay に表示されるようになります。
 
 2. 設定方法
-	(1) ここに置いてある sharpikeebo_lcd.service を /etc/systemd/system/ にコピーする。
+	(1) 必要なライブラリをインストールする
+		$ sudo apt-get update
+		$ sudo apt-get upgrade
+		$ sudo apt-get install pulseaudio libpulse-dev python3-pip python3-pil pigpiod
+		$ git clone https://github.com/bitbank2/ArmbianIO.git
+		$ cd ArmbianIO/
+		$ make
+
+	(2) Activate SPI port.
+		$ sudo nano /boot/config.txt
+
+		Before:
+			#framebuffer_width=1280
+			#framebuffer_height=720
+		After:
+			framebuffer_width=400
+			framebuffer_height=240
+
+		Before:
+			#dtparam=spi=on
+		After:
+			dtparam=spi=on
+
+	(3) ここに置いてある sharpikeebo_lcd.service を /etc/systemd/system/ にコピーする。
 		$ sudo cp ./sharpikeebo_lcd/sharpikeebo_lcd /usr/local/bin/
 		$ sudo cp ./sharpikeebo_lcd.service /etc/systemd/system/
 
-	(2) /etc/systemd/system/sharpikeebo_lcd.service に実行属性を与える
+	(4) /etc/systemd/system/sharpikeebo_lcd.service に実行属性を与える
 		$ sudo chmod 755 /etc/systemd/system/sharpikeebo_lcd.service
 
-	(3) sharpikeebo_lcdサービスを有効化して起動する
+	(5) sharpikeebo_lcdサービスを有効化して起動する
 		$ sudo systemctl enable sharpikeebo_lcd
 		$ sudo systemctl start sharpikeebo_lcd
 

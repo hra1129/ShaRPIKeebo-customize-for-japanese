@@ -25,9 +25,9 @@ clean:
 
 install: sharpikeebo_lcd
 	echo "Install sharpikeebo_lcd service."
-	sudo systemctl stop sharpikeebo_lcd.service
 	sudo cp ./sharpikeebo_lcd /usr/local/bin/
 	sudo cp ./sharpikeebo_lcd.service /etc/systemd/system/
 	sudo chmod 644 /etc/systemd/system/sharpikeebo_lcd.service
+	sudo systemctl stop sharpikeebo_lcd.service
 	sudo systemctl enable sharpikeebo_lcd.service
 	sudo systemctl start sharpikeebo_lcd.service
