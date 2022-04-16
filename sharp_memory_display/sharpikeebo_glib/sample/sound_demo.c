@@ -109,16 +109,16 @@ int main( int argc, char *argv[] ) {
 	tone_test( hpsg, 11, 1 );
 	tone_test( hpsg, 12, 1 );
 	printf( "Stop.\n" );
-	psg_write_register( hpsg, 8, 0 );		//	use envelope
+	psg_write_register( hpsg, 8, 0 );		//	stop tone
 	sleep( 1 );
 
 	psg_write_register( hpsg, 7, 0b10111000 );
 	tone_test2( hpsg,  0, 4, 7, 1 );
 	tone_test2( hpsg,  2, 6, 9, 1 );
 	printf( "Stop.\n" );
-	psg_write_register( hpsg, 8, 0 );		//	use envelope
-	psg_write_register( hpsg, 9, 0 );		//	use envelope
-	psg_write_register( hpsg, 10, 0 );		//	use envelope
+	psg_write_register( hpsg, 8, 0 );		//	stop tone
+	psg_write_register( hpsg, 9, 0 );		//	stop tone
+	psg_write_register( hpsg, 10, 0 );		//	stop tone
 	sleep( 1 );
 
 	psg_write_register( hpsg, 8, 15 );		//	use envelope
@@ -126,7 +126,7 @@ int main( int argc, char *argv[] ) {
 		envelope_test( hpsg, 0, 4, i, 2000 );
 	}
 	printf( "Stop.\n" );
-	psg_write_register( hpsg, 8, 0 );		//	use envelope
+	psg_write_register( hpsg, 8, 0 );		//	stop tone
 	sleep( 2 );
 
 	psg_write_register( hpsg, 7, 0b10110111 );

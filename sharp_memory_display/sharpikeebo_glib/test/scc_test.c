@@ -1,5 +1,5 @@
 // --------------------------------------------------------------------
-// SCC emulator
+// Test of SCC
 // ====================================================================
 //	Copyright 2022 t.hara
 //
@@ -22,63 +22,47 @@
 //	DEALINGS IN THE SOFTWARE.
 // --------------------------------------------------------------------
 
-#ifndef __SCC_EMULATOR_H__
-#define __SCC_EMULATOR_H__
-
+#include <scc_emulator.h>
+#include <stdio.h>
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef void *H_SCC_T;
-
-// --------------------------------------------------------------------
-//	scc_initialize
-//	input)
-//		none
-//	output)
-//		0 ...... Failed (Not enough memory.)
-//		!0 ..... H_SCC_T instance.
-// --------------------------------------------------------------------
-H_SCC_T scc_initialize( void );
+static const int8_t wave1[] = { 
+	 127,  127,  127,  127,  127,  127,  127,  127, 
+	 127,  127,  127,  127,  127,  127,  127,  127, 
+	-128, -128, -128, -128, -128, -128, -128, -128, 
+	-128, -128, -128, -128, -128, -128, -128, -128, 
+};
 
 // --------------------------------------------------------------------
-//	scc_terminate
-//	input)
-//		hscc ... H_SCC_T instance
-//	output)
-//		none
-// --------------------------------------------------------------------
-void scc_terminate( H_SCC_T hscc );
+static void set_wave( H_SCC_T hscc, int ch, const int8_t *p_wave ) {
+	int i, address;
 
-// --------------------------------------------------------------------
-//	scc_generate_wave
-//	input)
-//		hscc ......... H_SCC_T instance
-//		pwave ........ Wave memory address
-//		samples ...... Samples of Wave memory
-//	output)
-//		none
-//	comment)
-//		An 8-bit signed monaural signal is written to pwave.
-//		samples indicates the size of the pwave and is equal to the number of BYTEs.
-// --------------------------------------------------------------------
-void scc_generate_wave( H_SCC_T hscc, int16_t *pwave, int samples );
-
-// --------------------------------------------------------------------
-//	scc_write_register
-//	input)
-//		hpsg ......... H_SCC_T instance
-//		address ...... SCC register address
-//		data ......... Write data
-//	output)
-//		none
-// --------------------------------------------------------------------
-void scc_write_register( H_SCC_T hscc, uint16_t address, uint8_t data );
-
-#ifdef __cplusplus
+	address = 0xB800 + ch * 32;
+	for( i = 0; i < 32; i++ ) {
+		scc_write_register( hscc, address + i, p_wave[i] );
+	}
 }
-#endif
 
-#endif
+// --------------------------------------------------------------------
+int main( int argc, char *argv[] ) {
+	H_SCC_T hscc;
+	static int16_t wave[2048];
+	int i, j;
+
+	hscc = scc_initialize();
+
+	set_wave( hscc, 0, wave1 );
+	scc_write_register( hscc, 0xB8C0, 1 << 5 );
+	scc_write_register( hscc, 0xB8A0, 100 );
+	scc_write_register( hscc, 0xB8A1, 0 );
+	scc_write_register( hscc, 0xB8AA, 15 );
+
+	for( j = 0; j < 10; j++ ) {
+		scc_generate_wave( hscc, wave, 1280 );
+		for( i = 0; i < 1280; i++ ) {
+			printf( "%d\n", (int) wave[i] );
+		}
+	}
+	scc_terminate( hscc );
+	return 0;
+}

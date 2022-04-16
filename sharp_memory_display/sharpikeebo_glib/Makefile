@@ -1,6 +1,6 @@
 CFLAGS=-c -Wall -O2 -DSPI_BUS_NUMBER=0 -I.
 LIBS = -L. -lsharpikeebo_glib -pthread -larmbianio -lm -lpulse -lpulse-simple
-all: spk_demo game_demo rotate_demo sound_demo psg_test pulse_audio_test
+all: spk_demo game_demo rotate_demo sound_demo sound_demo2 psg_test pulse_audio_test scc_test
 
 ###############################################################################
 #  build for library
@@ -75,6 +75,15 @@ sample/sound_demo.o: sharpikeebo_glib.h sharpikeebo_slib.h sample/sound_demo.c
 	$(CC) $(CFLAGS) sample/sound_demo.c -o sample/sound_demo.o
 
 ###############################################################################
+#  build for sound_demo2
+###############################################################################
+sound_demo2: libsharpikeebo_glib.a sharpikeebo_slib.o sample/sound_demo2.o
+	$(CC) sharpikeebo_slib.o sample/sound_demo2.o $(LIBS) -o sound_demo2
+
+sample/sound_demo2.o: sharpikeebo_glib.h sharpikeebo_slib.h sample/sound_demo2.c
+	$(CC) $(CFLAGS) sample/sound_demo2.c -o sample/sound_demo2.o
+
+###############################################################################
 #  test
 ###############################################################################
 psg_test: libsharpikeebo_glib.a test/psg_test.o
@@ -88,6 +97,12 @@ pulse_audio_test: test/pulse_audio_test.o
 
 test/pulse_audio_test.o: test/pulse_audio_test.c
 	$(CC) $(CFLAGS) test/pulse_audio_test.c -o test/pulse_audio_test.o
+
+scc_test: libsharpikeebo_glib.a test/scc_test.o
+	$(CC) test/scc_test.o $(LIBS) -o scc_test
+
+test/scc_test.o: sharpikeebo_slib.h test/scc_test.c
+	$(CC) $(CFLAGS) test/scc_test.c -o test/scc_test.o
 
 ###############################################################################
 #  clean

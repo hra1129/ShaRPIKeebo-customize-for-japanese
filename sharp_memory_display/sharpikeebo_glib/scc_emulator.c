@@ -83,6 +83,7 @@ static int _tone_generator( SCC_T *pscc, SCC_1CH_T *pch, int increment ) {
 		pch->sample_pos		= (pch->sample_pos + shift) & 31;
 		level				= (pch->volume * pch->wave[ pch->sample_pos ]) >> 4;
 		pch->last_level		= level;
+		pch->counter		-= shift * (pch->periodic_register + 1);
 	}
 	else {
 		level				= pch->last_level;
@@ -96,7 +97,7 @@ void scc_generate_wave( H_SCC_T hscc, int16_t *pwave, int samples ) {
 	SCC_T *pscc = (SCC_T*) hscc;
 
 	for( i = 0; i < samples; i++ ) {
-		next_clock = pscc->samples * SCC_CLOCK / SAMPLE_RATE;
+		next_clock = (int)( (int64_t)pscc->samples * SCC_CLOCK / SAMPLE_RATE );
 		diff_clock = next_clock - pscc->clock;
 		pscc->samples++;
 
@@ -127,9 +128,16 @@ void scc_write_register( H_SCC_T hscc, uint16_t address, uint8_t data ) {
 	if( address < 0x00A0 ) {
 		//	wave memory
 		ch = address >> 5;
-		pscc->channel[ch].wave[address & 31] = data;
+		pscc->channel[ch].wave[address & 31] = (int8_t)data;
 	}
-	else if( address < 0xAA ) {
+	else if( (address & 0xFE) == 0xFE ) {
+		//	mode register2
+	}
+	else if( (address & 0xC0) == 0xC0 ) {
+		//	mode register1
+		pscc->counter_reset_mode = BIT( data, 5 );
+	}
+	else if( (address & 0xAF) < 0xAA ) {
 		//	frequency
 		ch = (address >> 1) & 7;
 		if( (address & 1) == 0 ) {
@@ -143,28 +151,16 @@ void scc_write_register( H_SCC_T hscc, uint16_t address, uint8_t data ) {
 			pscc->channel[ch].sample_pos = 0;
 		}
 	}
-	else if( address < 0xAF ) {
+	else if( (address & 0xAF) < 0xAF ) {
 		//	volume
-		ch = (address - 0xAA) & 7;
+		ch = ((address & 0xAF) - 0xAA) & 7;
 		pscc->channel[ch].volume = data & 15;
 	}
-	else if( address == 0xAF ) {
+	else { 	//	if( (address & 0xAF) == 0xAF ) {
 		pscc->channel[0].tone_enable	= BIT( data, 0 );
 		pscc->channel[1].tone_enable	= BIT( data, 1 );
 		pscc->channel[2].tone_enable	= BIT( data, 2 );
 		pscc->channel[3].tone_enable	= BIT( data, 3 );
 		pscc->channel[4].tone_enable	= BIT( data, 4 );
-	}
-	else if( address < 0xC0 ) {
-		//	volume
-		ch = (address - 0xAA) & 7;
-		pscc->channel[ch].volume = data & 15;
-	}
-	else if( address < 0xFE ) {
-		//	mode register1
-		pscc->counter_reset_mode = BIT( data, 5 );
-	}
-	else {
-		//	mode register2
 	}
 }
