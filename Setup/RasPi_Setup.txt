@@ -15,17 +15,37 @@
 
 2. RaspberryPiLite の設定
 	2.0. 最初にやること
-		$ sudp apt-get update
-		$ sudp apt-get upgrade
+		$ sudo apt-get update
+		$ sudo apt-get upgrade
 
 	2.1. 日本語環境の設定
 		$ sudo apt-get install uim-fep uim-anthy fonts-noto-mono fbterm
+		$ sudo chmod u+s /usr/bin/fbterm
+		$ sudo setcap 'cap_sys_tty_config+ep' /usr/bin/fbterm
+		$ sudo chmod 0666 /dev/fb0
 		$ nano .bashrc
 
 			ファイルの最後に下記を追加して保存する。
 			alias fbterm='env LANG=ja_JP.UTF8 fbterm uim-fep'
-			export TERM=fbterm
-			sudo fbterm
+
+			if grep '^fbterm' /proc/$PPID/cmdline > /dev/null; then
+			  export TERM=fbterm
+			fi
+
+			case "$TERM" in
+			  linux*)
+			    fbterm
+			    ;;
+			  *)
+			    ;;
+			esac
+
+		$ nano .uim
+
+			新規ファイルだが、下記を記入することで、CTRL+SPACE で日本語入力が切り替えられるようになる。
+			(define default-im-name 'anthy)
+			(define-key generic-on-key? '("<Control> "))
+			(define-key generic-off-key? '("<Control> "))
 
 	2.2. CLI のエディタ ne, ファイラー fd をインストールする
 		$ sudo apt-get install ne fdclone
